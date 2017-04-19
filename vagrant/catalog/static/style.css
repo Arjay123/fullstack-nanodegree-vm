@@ -35,3 +35,26 @@
     box-shadow: none;
     background-image: none;
 }
+
+.img-responsive{
+    max-width: 100%;
+}
+
+.item-image {
+    margin-top: 20px;
+}
+
+.item-box{
+    border: 1px solid #D3D3D3;
+    border-radius: 3px;
+    padding: 0 20px;
+    margin-bottom:20px;
+}
+
+.footer {
+    height: 100px;
+}
+
+.footer-content {
+    padding-top: 50px;
+}
