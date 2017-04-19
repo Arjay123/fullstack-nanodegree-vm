@@ -1,0 +1,37 @@
+.navbar-default,
+.navbar-toggle {
+    background-color: white;
+    border-color: white;
+    background-image: none;
+    box-shadow: none;
+    margin-bottom: 0;
+}
+
+.navbar-toggle{
+    bottom: 35px;
+}
+
+#navbar-min {
+    border-color: transparent;
+}
+
+#navbar {
+    border-top: 3px solid black;
+    border-bottom: 3px solid black;
+}
+
+.logo {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.nav-link,
+.dropdown-toggle,
+.dropdown-toggle:focus,
+.dropdown-toggle:hover,
+#dropdown-menu ul,
+#dropdown-menu a {
+    background-color: white;
+    box-shadow: none;
+    background-image: none;
+}
