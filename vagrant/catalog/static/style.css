@@ -40,8 +40,15 @@
     max-width: 100%;
 }
 
+.item-image-container {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding:20px 0;
+}
+
 .item-image {
-    margin-top: 20px;
+    min-width: 100%;
+    min-height: 100%;
 }
 
 .item-box{
@@ -57,4 +64,21 @@
 
 .footer-content {
     padding-top: 50px;
+}
+
+
+.row-eq-height {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display:         flex;
+}
+
+@media screen and (max-width: 768px){
+    .eq-height-xs{
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display:         flex;
+    }
 }
