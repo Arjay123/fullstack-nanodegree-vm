@@ -43,7 +43,8 @@
 .item-image-container {
     margin-top: auto;
     margin-bottom: auto;
-    padding:20px 0;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 .item-image {
@@ -58,6 +59,9 @@
     margin: 0 3px 20px 3px;
 }
 
+.item{
+
+}
 
 .footer {
     height: 100px;

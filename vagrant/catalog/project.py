@@ -22,7 +22,7 @@ def catalogCategoryPage(category):
 
 @app.route("/catalog/<int:item_id>")
 def itemPage(item_id):
-    return "This is the item page for item: %s" % item_id
+    return render_template("item.html")
 
 
 @app.route("/login")
