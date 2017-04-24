@@ -37,7 +37,7 @@ def createItemPage():
 
 @app.route("/catalog/<int:item_id>/edit")
 def editItemPage(item_id):
-    return "This is the edit page for item %s" % item_id
+    return render_template("edit.html")
 
 
 @app.route("/catalog/<int:item_id>/delete")
