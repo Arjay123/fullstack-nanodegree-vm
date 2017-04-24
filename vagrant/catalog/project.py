@@ -27,7 +27,7 @@ def itemPage(item_id):
 
 @app.route("/login")
 def loginPage():
-    return "This is the login page"
+    return render_template("login.html")
 
 @app.route("/logout")
 def logoutPage():
