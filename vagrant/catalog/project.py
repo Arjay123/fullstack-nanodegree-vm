@@ -10,14 +10,10 @@ def homepage():
     return render_template("homepage.html")
 
 
-@app.route("/catalog")
-def catalogMainPage():
-    return "This is the catalog main page"
-
-
+@app.route("/catalog", defaults={"category": None})
 @app.route("/catalog/<string:category>")
-def catalogCategoryPage(category):
-    return "This is the catalog page for %s" % category
+def catalogPage(category):
+    return render_template("catalog.html", category=category)
 
 
 @app.route("/catalog/<int:item_id>")
@@ -36,7 +32,7 @@ def logoutPage():
 
 @app.route("/create")
 def createItemPage():
-    return "This is the create item page"
+    return render_template("create.html")
 
 
 @app.route("/catalog/<int:item_id>/edit")
