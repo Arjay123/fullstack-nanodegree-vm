@@ -2,6 +2,7 @@ import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 from database_setup import Item, User, ItemList, Base, create_db
 
@@ -35,13 +36,63 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(category, item.category)
         self.assertEqual(views, item.views)
         self.assertEqual(self.user, item.user)
-        
 
+
+    def test_ItemShouldFail_NoName(self):
+        item_id = 10
+        name = None
+        category="Category"
+        description="Description"
+        views=0
+
+        item = Item(name=name,
+                    category=category,
+                    description=description,
+                    user=self.user)
+
+        session.add(item)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_ItemShouldFail_NoCategory(self):
+        item_id = 10
+        name = "Name"
+        category=None
+        description="Description"
+        views=0
+
+        item = Item(name=name,
+                    category=category,
+                    description=description,
+                    user=self.user)
+
+        session.add(item)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_ItemShouldFail_NoDesc(self):
+        item_id = 10
+        name = "Name"
+        category="Category"
+        description=None
+        views=0
+
+        item = Item(name=name,
+                    category=category,
+                    description=description,
+                    user=self.user)
+
+        session.add(item)
+        self.assertRaises(IntegrityError, session.commit)
 
 
     def setUp(self):
         db_init()
         self.user = session.query(User).filter_by(id=1).one()
+
+
+    def tearDown(self):
+        session.rollback()
 
 
 
