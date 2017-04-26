@@ -30,9 +30,10 @@ class Item(Base):
     name = Column(String(250), nullable=False)
     category = Column(String(80), nullable=False)
     description = Column(String(250), nullable=False)
-    views = Column(Integer)
+    views = Column(Integer, default=0)
     user_id = Column(Integer, ForeignKey("user.id"))
     user = relationship(User)
+
 
 
 class ItemList(Base):
