@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
 
 from sqlalchemy.schema import Table
 
@@ -13,8 +13,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
-    email = Column(String(250))
+    email = Column(String(250), nullable=True, unique=True)
     image = Column(String(250))
+
+
 
 
 itemlist_table = Table('association', Base.metadata,

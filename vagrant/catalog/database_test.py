@@ -118,6 +118,7 @@ class TestCatalogDB(unittest.TestCase):
         self.assertRaises(NoResultFound, 
             session.query(Item).filter_by(id=item_id).one)      
 
+
     def test_ItemReadShouldFail_NoName(self):
         item_name = "NoName"
         
@@ -160,7 +161,114 @@ class TestCatalogDB(unittest.TestCase):
             session.query(Item).filter_by(id=item_id).one)
 
 
+    def test_UserCreateShouldPass(self):
+
+        user_name="Kyle Kyle"
+        user_email="kyle@email.com"
+        user_id = 3
+        user = User(name=user_name, email=user_email)
         
+
+        session.add(user)
+        session.commit()
+
+        self.assertEqual(user_id, user.id)
+        self.assertEqual(user_name, user.name)
+        self.assertEqual(user_email, user.email)
+
+
+    def test_UserCreateShouldPass_NullEmails(self):
+
+        user1 = User(name="User1")
+        user2 =User(name="User2")
+
+        session.add(user1)
+        session.add(user2)
+        session.commit()
+
+        self.assertEqual(3, user1.id)
+        self.assertEqual(4, user2.id)
+
+
+    def test_UserCreateShouldFail_NoName(self):
+        user = User(name=None)
+
+        session.add(user)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_UserCreateShouldFail_SameEmail(self):
+        user = User(name="Username", email="arjay@email.com")
+
+        session.add(user)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_UserReadShouldPass_ID(self):
+        user_id = 1
+
+        user = session.query(User).filter_by(id=user_id).one()
+        self.assertEqual(user_id, user.id)
+
+
+    def test_UserReadShouldPass_Email(self):
+        user_email = "arjay@email.com"
+
+        user = session.query(User).filter_by(email=user_email).one()
+        self.assertEqual(user_email, user.email)
+
+
+    def test_UserReadShouldFail_NoID(self):
+        user_id = 3
+        
+        self.assertRaises(NoResultFound,
+            session.query(User).filter_by(id=user_id).one)
+
+
+    def test_UserReadShouldFail_NoEmail(self):
+        user_email = "no@email.com"
+
+        self.assertRaises(NoResultFound,
+            session.query(User).filter_by(email=user_email).one)
+
+
+    def test_UserUpdateShouldPass(self):
+        user_id = 1
+        new_name = "NewName"
+        new_email = "NewEmail@email.com"
+
+        user = session.query(User).filter_by(id=user_id).one()
+
+        user.name = new_name
+        user.email = new_email
+
+        session.add(user)
+        session.commit()
+
+        user = session.query(User).filter_by(id=user_id).one()
+
+        self.assertEqual(user_id, user.id)
+        self.assertEqual(new_name, user.name)
+        self.assertEqual(new_email, user.email)
+
+
+    def test_UserDeleteShouldPass(self):
+        user_id = 1
+
+        user = session.query(User).filter_by(id=user_id).one()
+        
+        session.delete(user)
+        session.commit()
+
+        self.assertRaises(NoResultFound,
+            session.query(User).filter_by(id=user_id).one)
+
+
+
+        
+
+
+
 def db_init():
     # delete existing entries in db
     session.query(Item).delete()
@@ -168,8 +276,8 @@ def db_init():
     session.query(ItemList).delete()
 
     # add users
-    user1 = User(name="Arjay Nguyen")
-    user2 = User(name="Mimi Nguyen")
+    user1 = User(name="Arjay Nguyen", email="arjay@email.com")
+    user2 = User(name="Mimi Nguyen", email="mimi@email.com")
 
     session.add_all([user1, user2])
     session.commit()
