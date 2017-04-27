@@ -3,6 +3,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 from database_setup import Item, User, ItemList, Base, create_db
 
@@ -16,7 +17,16 @@ session = DBSession()
 
 class TestCatalogDB(unittest.TestCase):
 
-    def test_ItemShouldCreate(self):
+    def setUp(self):
+        db_init()
+        self.user = session.query(User).filter_by(id=1).one()
+
+
+    def tearDown(self):
+        session.rollback()
+
+
+    def test_ItemCreateShouldPass(self):
         item_id = 10
         name = "Name"
         category="Category"
@@ -38,7 +48,7 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(self.user, item.user)
 
 
-    def test_ItemShouldFail_NoName(self):
+    def test_ItemCreateShouldFail_NoName(self):
         item_id = 10
         name = None
         category="Category"
@@ -54,7 +64,7 @@ class TestCatalogDB(unittest.TestCase):
         self.assertRaises(IntegrityError, session.commit)
 
 
-    def test_ItemShouldFail_NoCategory(self):
+    def test_ItemCreateShouldFail_NoCategory(self):
         item_id = 10
         name = "Name"
         category=None
@@ -70,7 +80,7 @@ class TestCatalogDB(unittest.TestCase):
         self.assertRaises(IntegrityError, session.commit)
 
 
-    def test_ItemShouldFail_NoDesc(self):
+    def test_ItemCreateShouldFail_NoDesc(self):
         item_id = 10
         name = "Name"
         category="Category"
@@ -86,15 +96,68 @@ class TestCatalogDB(unittest.TestCase):
         self.assertRaises(IntegrityError, session.commit)
 
 
-    def setUp(self):
-        db_init()
-        self.user = session.query(User).filter_by(id=1).one()
+    def test_ItemReadShouldPass_ID(self):
+        item_id=1
+
+        found = session.query(Item).filter_by(id=item_id).one()
+
+        self.assertEqual(item_id, found.id)
 
 
-    def tearDown(self):
-        session.rollback()
+    def test_ItemReadShouldPass_Name(self):
+        item_name="Nintendo Switch"
+
+        found = session.query(Item).filter_by(name=item_name).one()
+
+        self.assertEqual(item_name, found.name)
 
 
+    def test_ItemReadShouldFail_NoID(self):
+        item_id = 123
+        
+        self.assertRaises(NoResultFound, 
+            session.query(Item).filter_by(id=item_id).one)      
+
+    def test_ItemReadShouldFail_NoName(self):
+        item_name = "NoName"
+        
+        self.assertRaises(NoResultFound, 
+            session.query(Item).filter_by(name=item_name).one)  
+
+
+    def test_ItemUpdateShouldPass(self):
+        item_id = 1
+        new_name = "Newname"
+        new_category = "NewCategory"
+        new_desc = "NewDesc"
+
+        item = session.query(Item).filter_by(id=item_id).one()
+
+        item.name = new_name
+        item.category = new_category
+        item.description = new_desc
+
+        session.add(item)
+        session.commit()
+
+        item = session.query(Item).filter_by(id=item_id).one()
+
+        self.assertEqual(item_id, item.id)
+        self.assertEqual(new_name, item.name)
+        self.assertEqual(new_category, item.category)
+        self.assertEqual(new_desc, item.description)
+
+
+    def test_ItemDeleteShouldPass(self):
+        item_id = 1
+
+        item = session.query(Item).filter_by(id=item_id).one()
+
+        session.delete(item)
+        session.commit()
+
+        self.assertRaises(NoResultFound,
+            session.query(Item).filter_by(id=item_id).one)
 
 
         
