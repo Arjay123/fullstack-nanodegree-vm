@@ -96,6 +96,21 @@ class TestCatalogDB(unittest.TestCase):
         self.assertRaises(IntegrityError, session.commit)
 
 
+    def test_ItemCreateShouldFail_NoUser(self):
+        item_id = 10
+        name = "Name"
+        category="Category"
+        description="Description"
+
+        item = Item(name=name,
+            category=category,
+            description=description,
+            user=None)
+
+        session.add(item)
+        self.assertRaises(IntegrityError, session.commit)
+
+
     def test_ItemReadShouldPass_ID(self):
         item_id=1
 
@@ -262,6 +277,15 @@ class TestCatalogDB(unittest.TestCase):
 
         self.assertRaises(NoResultFound,
             session.query(User).filter_by(id=user_id).one)
+
+
+    def test_ItemListCreateShouldPass(self):
+        item_list = ItemList(name="List1", user=self.user)
+
+        session.add(item_list)
+        session.commit()
+
+        self.assertEqual(1, item_list.id)
 
 
 

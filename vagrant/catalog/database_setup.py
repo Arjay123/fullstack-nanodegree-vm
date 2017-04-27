@@ -33,7 +33,7 @@ class Item(Base):
     category = Column(String(80), nullable=False)
     description = Column(String(250), nullable=False)
     views = Column(Integer, default=0)
-    user_id = Column(Integer, ForeignKey("user.id"))
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship(User)
 
 
@@ -43,7 +43,18 @@ class ItemList(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship(User)
     items = relationship("Item", secondary=itemlist_table)
+
+
+    def remove_item(self, item):
+        if item in self.items:
+            self.items.remove(item)
+
+    def add_item(self, item):
+        self.items.add(item)
+
 
 
 def create_db(uri="sqlite:///itemcatalog.db"):
