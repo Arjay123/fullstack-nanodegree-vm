@@ -280,14 +280,62 @@ class TestCatalogDB(unittest.TestCase):
 
 
     def test_ItemListCreateShouldPass(self):
-        item_list = ItemList(name="List1", user=self.user)
+        item_list = ItemList(name="List", user=self.user)
 
         session.add(item_list)
         session.commit()
 
+        self.assertEqual(3, item_list.id)
+        self.assertEqual("List", item_list.name)
+
+
+    def test_ItemListCreateShouldFail_NoName(self):
+        item_list = ItemList(name=None, user=self.user)
+
+        session.add(item_list)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_ItemListCreateShouldFail_NoUser(self):
+        item_list = ItemList(name="Name", user=None)
+
+        session.add(item_list)
+        self.assertRaises(IntegrityError, session.commit)
+
+
+    def test_ItemListReadShouldPass(self):
+        item_list = session.query(ItemList).filter_by(id=1).one()
+
         self.assertEqual(1, item_list.id)
 
 
+    def test_ItemListReadShouldFail_ID(self):
+        self.assertRaises(NoResultFound,
+            session.query(ItemList).filter_by(id=123).one)
+
+
+    def test_ItemListUpdateShouldPass(self):
+        item_list = session.query(ItemList).filter_by(id=1).one()
+        orig_length = len(item_list.items)
+
+        new_item = session.query(Item).filter_by(id=9).one()
+        item_list.items.append(new_item)
+
+        session.add(item_list)
+        session.commit()
+
+        item_list = session.query(ItemList).filter_by(id=1).one()
+        self.assertEqual(orig_length+1, len(item_list.items))
+
+
+    def test_ItemListDeleteShouldPass(self):
+        item_list = session.query(ItemList).filter_by(id=1).one()
+
+        session.delete(item_list)
+        session.commit()
+
+        self.assertRaises(NoResultFound, 
+            session.query(ItemList).filter_by(id=1).one)
 
         
 
@@ -295,9 +343,11 @@ class TestCatalogDB(unittest.TestCase):
 
 def db_init():
     # delete existing entries in db
+    session.rollback()
     session.query(Item).delete()
     session.query(User).delete()
     session.query(ItemList).delete()
+    session.commit()
 
     # add users
     user1 = User(name="Arjay Nguyen", email="arjay@email.com")
@@ -365,6 +415,21 @@ def db_init():
 
     session.add_all([item1, item2, item3, item4, item5, item6, item7, item8,
                      item9])
+    session.commit()
+
+    item_list = ItemList(name="List1", user=user1)
+
+    item_list.items.append(item1)
+    item_list.items.append(item2)
+    item_list.items.append(item3)
+
+    item_list2 = ItemList(name="List2", user=user2)
+
+    item_list2.items.append(item3)
+    item_list2.items.append(item4)
+    item_list2.items.append(item5)
+
+    session.add_all([item_list, item_list2])
     session.commit()
 
 

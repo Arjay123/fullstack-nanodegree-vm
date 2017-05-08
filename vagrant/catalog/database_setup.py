@@ -20,6 +20,7 @@ class User(Base):
 
 
 itemlist_table = Table('association', Base.metadata,
+    Column('id', Integer, primary_key=True),
     Column("itemlist_id", Integer, ForeignKey("itemlist.id")),
     Column("item_id", Integer, ForeignKey("item.id"))
 )
@@ -43,17 +44,12 @@ class ItemList(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
-    user_id = Column(Integer, ForeignKey("user.id"))
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship(User)
-    items = relationship("Item", secondary=itemlist_table)
+    items = relationship("Item", secondary=itemlist_table, passive_deletes=True)
 
 
-    def remove_item(self, item):
-        if item in self.items:
-            self.items.remove(item)
 
-    def add_item(self, item):
-        self.items.add(item)
 
 
 
