@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
 from database_setup import Item, User, ItemList, Base, create_db
@@ -17,8 +17,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def homepage():
-    items = session.query(Item).order_by(Item.views).limit(4)
-    print items
+    items = session.query(Item).order_by(desc(Item.views)).limit(4)
     return render_template("homepage.html", items=items)
 
 
