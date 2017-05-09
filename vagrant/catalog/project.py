@@ -15,19 +15,30 @@ app = Flask(__name__)
 
 
 def get_categories():
+    """
+    Retrieves all available item catagories
+
+    Returns:
+        List of all categories as strings
+    """
     categories = session.query(Item.category).group_by(Item.category).all()
     return [cat[0] for cat in categories]
 
 
 @app.route("/")
 def homepage():
+    """
+    Loads homepage
+    """
     items = session.query(Item).order_by(desc(Item.views)).limit(4)
     return render_template("homepage.html", items=items)
 
 
 @app.route("/catalog")
 def catalogPage():
-    
+    """
+    Loads catalog page
+    """
 
     order = request.args.get('order')
     category = request.args.get('category')
@@ -59,6 +70,13 @@ def catalogPage():
 
 @app.route("/catalog/<int:item_id>")
 def itemPage(item_id):
+    """
+        Loads page for a specific item
+
+        Args:
+            item_id - id of item to load
+    """
+
     #TODO - remove item from sampler set
     item = session.query(Item).filter_by(id=item_id).one()
     rand_items = session.query(Item).filter_by(category=item.category).all()
@@ -79,6 +97,13 @@ def logoutPage():
 
 @app.route("/create", methods=['GET', 'POST'])
 def createItemPage():
+    """ 
+        Loads page for creating a new item. Requires user
+        to be logged in
+    """
+
+    # TODO - Check user login, if none, defer to login page
+
     errors = {}
     params = {}
 
