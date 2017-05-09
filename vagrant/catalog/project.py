@@ -1,3 +1,5 @@
+import random
+
 from flask import Flask, render_template, url_for, request
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -53,9 +55,13 @@ def catalogPage():
                             items=items)
 
 
-@app.route("/catalog/item/<int:item_id>")
+@app.route("/catalog/<int:item_id>")
 def itemPage(item_id):
-    return render_template("item.html")
+    item = session.query(Item).filter_by(id=item_id).one()
+    rand_items = session.query(Item).filter_by(category=item.category).all()
+    sample_size = 4 if len(rand_items) >= 4 else len(rand_items)- 1
+    rand_items = random.sample(rand_items, sample_size)
+    return render_template("item.html", sel_item=item, items=rand_items)
 
 
 @app.route("/login")
