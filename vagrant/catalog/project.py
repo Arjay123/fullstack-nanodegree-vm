@@ -1,5 +1,15 @@
 from flask import Flask, render_template, url_for
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from database_setup import Item, User, ItemList, Base, create_db
+
+db_uri = "sqlite:///itemcatalog.db"
+engine = create_engine(db_uri)
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+        
 
 
 app = Flask(__name__)
@@ -7,7 +17,9 @@ app = Flask(__name__)
 
 @app.route("/")
 def homepage():
-    return render_template("homepage.html")
+    items = session.query(Item).order_by(Item.views).limit(4)
+    print items
+    return render_template("homepage.html", items=items)
 
 
 @app.route("/catalog", defaults={"category": None})
