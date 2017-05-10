@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<div class="row">
+    <div class="col-xs-12 col-sm-6 col-sm-offset-3">
+        <table class="table table-condensed">
+            <caption>Your created items</caption>
+            <thead>
+            <tr>
+                <th>Item name</th>
+                <th class="text-right">Controls</th>
+            </tr>
+            </thead>
+            {% for item in items %}
+            <tbody>
+            <tr>
+                <td>{{item.name}}</td>
+                <td class="text-right">
+                    <a class="btn btn-primary delete" href="{{url_for('editItemPage', item_id=item.id)}}">Edit</a>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal" data-id="{{item.id}}" data-item-name="{{item.name}}">
+                    Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+    </div>
+
+
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-body">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h2 class="modal-item-msg"></h2>
+            <div class="btn-grp text-right">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <a class="btn btn-primary modal-btn-delete">Delete</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+
+    $("#deleteModal").on("show.bs.modal", function(event){
+
+        var button = $(event.relatedTarget);
+        var itemid = button.data("id");
+        var name = button.data("item-name");
+
+        var modal = $(this);
+        modal.find(".modal-item-msg").text("Are you sure you want to delete "
+            + name + "?");
+        modal.find(".modal-btn-delete").attr("href", "/catalog/" + itemid + "/delete");
+    });
+
+</script>
+{% endblock %}

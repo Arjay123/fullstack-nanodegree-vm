@@ -6,6 +6,8 @@
 {% block content %}
 
 
+
+
 <div class="row item">
     <div class="col-xs-4 item-image-container">
         <img class="img-responsive center-block" src="http://placehold.it/200x200">
@@ -19,7 +21,12 @@
 </div>
 <div class="row item-extras">
     <div class="col-xs-12 text-right">
-        <p><a href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a> | <a href="{{url_for('deleteItem', item_id=sel_item.id)}}">Delete</a></p>
+        <a class="btn btn-primary" href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal">
+        Delete
+        </button>
+
+
     </div>
 </div>
 <div class="row items-similar-hdr">
@@ -47,6 +54,22 @@
             
         </div>
     </div>
+</div>
+
+
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h2>Are you sure you want to delete {{sel_item.name}}?</h2>
+        <div class="btn-grp text-right">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% endblock content %}

@@ -161,7 +161,10 @@ def createItemPage():
                             views=0)
             session.add(new_item)
             session.commit()
+            flash("Item successfully created", "success")
             return redirect(url_for('itemPage', item_id=new_item.id))
+        else:
+            flash("Item create has failed, see errors below", "danger")
 
     return render_template("create.html",
                             categories=get_categories(),
@@ -173,9 +176,6 @@ def createItemPage():
 def editItemPage(item_id):
 
     #TODO - get logged in user
-    #TODO - add message flashing
-
-
     item = get_item_by_id(item_id)
     user = session.query(User).filter_by(id=1).one()
     if not item:
@@ -245,6 +245,14 @@ def deleteItem(item_id):
     return "Okay"
 
 
+@app.route("/user/items")
+def userCreatedItems():
+
+    #TODO - get logged in user
+    user = session.query(User).filter_by(id=1).one()
+    items = session.query(Item).filter_by(user=user).all()
+
+    return render_template("useritems.html", items=items)
 
 
 
