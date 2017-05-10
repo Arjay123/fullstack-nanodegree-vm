@@ -2,13 +2,24 @@
 {% from "macros.html" import item_form %}
 
 {% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+    <div class="alert alert-{{category}}" role="alert">{{message}}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 
 <div class="row">
-    <h2 class="text-center">Edit item</h2>
-    <div class="col-xs-8 col-xs-offset-2 item-form">
-
-        {{item_form(item.name, item.category, item.description, errors, categories)}}
         
+    <h2 class="text-center">Edit item</h2>
+
+    <div class="col-xs-8 col-xs-offset-2 item-form">
+        
+        {{item_form(item.name, item.category, item.description, errors, categories)}}
+
+    
+
     </div>
 </div>
 

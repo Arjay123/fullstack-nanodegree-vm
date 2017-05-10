@@ -19,7 +19,7 @@
 </div>
 <div class="row item-extras">
     <div class="col-xs-12 text-right">
-        <p><a href="#">Edit</a> | <a href="#">Delete</a></p>
+        <p><a href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a> | <a href="{{url_for('deleteItem', item_id=sel_item.id)}}">Delete</a></p>
     </div>
 </div>
 <div class="row items-similar-hdr">

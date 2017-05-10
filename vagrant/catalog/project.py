@@ -1,6 +1,6 @@
 import random
 
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, url_for, request, redirect, flash
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
@@ -13,6 +13,7 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app = Flask(__name__)
+app.secret_key = "sosecret"
 
 
 def get_categories():
@@ -26,6 +27,12 @@ def get_categories():
     return [cat[0] for cat in categories]
 
 def get_item_by_id(item_id):
+    """
+    Retrieves item by its id
+
+    Return:
+        Item if found, else None
+    """
     q = session.query(Item).filter_by(id=item_id)
     if session.query(q.exists()).scalar():
         return q.one()
@@ -97,8 +104,6 @@ def itemPage(item_id):
     return render_template("item.html", sel_item=item, items=rand_items)
     
     
-
-
 @app.route("/login")
 def loginPage():
     return render_template("login.html")
@@ -117,6 +122,7 @@ def createItemPage():
     """
 
     # TODO - Check user login, if none, defer to login page
+    #TODO - set user to logged in user
 
     errors = {}
     params = {}
@@ -126,7 +132,7 @@ def createItemPage():
         category = request.form['category']
         description = request.form['description']
 
-        #TODO - set user to logged in user
+        
         user = session.query(User).filter_by(id=1).one()
 
         params = {"name": name,
@@ -146,7 +152,7 @@ def createItemPage():
             form_valid = False
             errors['description'] = "Item description is required"
 
-        #TODO - if error send back to form w/ entries, and errors
+
         if form_valid:
             new_item = Item(name=name,
                             category=category,
@@ -165,10 +171,19 @@ def createItemPage():
 
 @app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
 def editItemPage(item_id):
+
+    #TODO - get logged in user
+    #TODO - add message flashing
+
+
     item = get_item_by_id(item_id)
+    user = session.query(User).filter_by(id=1).one()
     if not item:
-        return "This item doesn't exist: %s" % str(item_id
-            )
+        return "This item doesn't exist: %s" % str(item_id)
+
+    if item.user != user:
+        return "You don't authorization for that"
+
     errors = {}
 
     if request.method == "POST":
@@ -176,7 +191,6 @@ def editItemPage(item_id):
         category = request.form['category']
         description = request.form['description']
 
-        #TODO - set user to logged in user
         user = session.query(User).filter_by(id=1).one()
 
 
@@ -199,8 +213,10 @@ def editItemPage(item_id):
             item.description = description
             session.add(item)
             session.commit()
+            flash("Item edits have been saved", "success")
+        else:
+            flash("Item edit has failed, see errors below", "danger")
 
-            # TODO - Flash message, saying edits are saved
 
     return render_template("edit.html",
                            item=item,
@@ -211,7 +227,23 @@ def editItemPage(item_id):
 
 @app.route("/catalog/<int:item_id>/delete")
 def deleteItem(item_id):
-    return "This is the page to delete item:", item_id
+    item = get_item_by_id(item_id)
+
+    #TODO - get logged in user
+    #TODO - add message flashing
+    #TODO - redirect to user's items list page
+    user = session.query(User).filter_by(id=1).one()
+    if not item:
+        return "This item doesn't exist: %s" % str(item_id)
+
+    if item.user != user:
+        return "You don't authorization for that"
+
+    session.delete(item)
+    session.commit()
+
+    return "Okay"
+
 
 
 
