@@ -3,6 +3,7 @@ import random
 from flask import Flask, render_template, url_for, request, redirect
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 from database_setup import Item, User, ItemList, Base, create_db
 
@@ -23,6 +24,12 @@ def get_categories():
     """
     categories = session.query(Item.category).group_by(Item.category).all()
     return [cat[0] for cat in categories]
+
+def get_item_by_id(item_id):
+    q = session.query(Item).filter_by(id=item_id)
+    if session.query(q.exists()).scalar():
+        return q.one()
+
 
 
 @app.route("/")
@@ -79,11 +86,17 @@ def itemPage(item_id):
 
     #TODO - remove item from sampler set
     #TODO - update item view count
-    item = session.query(Item).filter_by(id=item_id).one()
+    #TODO - Create this item does not exist page
+    item = get_item_by_id(item_id)
+    if not item:
+        return "This item does not exist: %s" % str(item_id)
+
     rand_items = session.query(Item).filter_by(category=item.category).all()
     sample_size = 4 if len(rand_items) >= 4 else len(rand_items)
     rand_items = random.sample(rand_items, sample_size)
     return render_template("item.html", sel_item=item, items=rand_items)
+    
+    
 
 
 @app.route("/login")
@@ -152,7 +165,10 @@ def createItemPage():
 
 @app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
 def editItemPage(item_id):
-    item = session.query(Item).filter_by(id=item_id).one()
+    item = get_item_by_id(item_id)
+    if not item:
+        return "This item doesn't exist: %s" % str(item_id
+            )
     errors = {}
 
     if request.method == "POST":
