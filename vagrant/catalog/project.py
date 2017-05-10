@@ -78,6 +78,7 @@ def itemPage(item_id):
     """
 
     #TODO - remove item from sampler set
+    #TODO - update item view count
     item = session.query(Item).filter_by(id=item_id).one()
     rand_items = session.query(Item).filter_by(category=item.category).all()
     sample_size = 4 if len(rand_items) >= 4 else len(rand_items)
@@ -149,9 +150,47 @@ def createItemPage():
                             params=params)
 
 
-@app.route("/catalog/<int:item_id>/edit")
+@app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
 def editItemPage(item_id):
-    return render_template("edit.html")
+    item = session.query(Item).filter_by(id=item_id).one()
+    errors = {}
+
+    if request.method == "POST":
+        name = request.form['name']
+        category = request.form['category']
+        description = request.form['description']
+
+        #TODO - set user to logged in user
+        user = session.query(User).filter_by(id=1).one()
+
+
+        form_valid = True
+        if not name:
+            form_valid = False
+            errors['name'] = "Item name cannot be empty"
+
+        if not category:
+            form_valid = False
+            errors['category'] = "Item category cannot be empty"
+
+        if not description:
+            form_valid = False
+            errors['description'] = "Item description cannot be empty"
+
+        if form_valid:
+            item.name = name
+            item.category = category
+            item.description = description
+            session.add(item)
+            session.commit()
+
+            # TODO - Flash message, saying edits are saved
+
+    return render_template("edit.html",
+                           item=item,
+                           errors=errors,
+                           categories=get_categories())
+
 
 
 @app.route("/catalog/<int:item_id>/delete")

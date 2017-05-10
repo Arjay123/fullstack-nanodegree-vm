@@ -1,0 +1,36 @@
+{% macro item_form(name, category, description, errors, categories) %}
+
+<form class="form-horizontal" method="POST">
+    <div class="form-group">
+        <label for="item-name-input" class="col-xs-2">Name</label>
+        <div class="col-xs-10">
+            <input type="text" name="name" value="{{name}}" class="form-control" id="item-name-input">
+            <span class="form-error">{{errors['name']}}</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="item-category-select" class="col-xs-2">Category</label>
+        <div class="col-xs-4">
+            <select class="form-control" name="category" id="item-category-select">
+                {% for cat in categories %}
+                <option {% if cat==category %} selected {% endif %}>{{cat}}</option>
+                {% endfor %}
+            </select>
+            <span class="form-error">{{errors['category']}}</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="item-description-input" class="col-xs-2">Description</label>
+        <div class="col-xs-10">
+            <textarea class="form-control" name="description" rows="10">{{description}}</textarea>
+            <span class="form-error">{{errors['description']}}</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-xs-10 col-xs-offset-2">
+            <button type="submit" class="btn btn-default">Submit</button>
+        </div>
+    </div>
+</form>
+
+{% endmacro %}
