@@ -1,12 +1,26 @@
 {% extends "emptybase.html" %}
 
+
+
+
+{% block import_scripts %}
+<script src="https://apis.google.com/js/client:platform.js?onload=start" async defer>
+  </script>
+{% endblock %}
+
 {% block base %}
+<meta name="google-signin-client_id" content="630208032124-lkj6h9hrlbhk9mg42mqejg88c2gvt3jg.apps.googleusercontent.com">
+
+<div class="row">
+<div id='result' class="col-xs-12">
+
 
 <div class="row logo">
     <div class="col-xs-6 col-xs-offset-3">
         <img class="img-responsive center-block" src="http://placehold.it/100x100">
     </div>
 </div>
+
 <div class="row login">
     <div class="col-xs-6 col-xs-offset-3">
         <div class="panel panel-default">
@@ -15,12 +29,61 @@
                 <h3>Login</h3>
             </div>
             <div class="login-auths text-center">
-                <p><button class="btn btn-default">Login with Facebook</button></p>
-                <p><button class="btn btn-default">Login with Google</button></p>
+
+                <div id="signInButton">
+                  <span class="g-signin2"
+                    data-scope="openid email"
+                    data-redirecturi="postmessage"
+                    data-accesstype="offline"
+                    data-cookiepolicy="single_host_origin"
+                    data-onsuccess="signInCallback"
+                    data-onfailure="onSignInFailure"
+                    data-approvalprompt="force">
+                  </span>
+                </div>
+
             </div>
           </div>
         </div>
     </div>
 </div>
+</div>
+</div>
+{% endblock %}
 
+
+{% block scripts %}
+<script>
+
+function signInCallback(authResult){
+    if (authResult['code']) {
+        $('#signInButton').attr('style', 'display: none');
+
+        $.ajax({
+            type: 'POST',
+            url: '/gconnect?state={{STATE}}',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            processData: false,
+            contentType: 'application/octet-stream; charset=utf-8',
+            data: authResult['code'],
+            success: function(result) {
+                if (result){
+                    window.location.href='/success'
+                } else if (authResult['error']) {
+                    console.log('There was an error: ' + authResult['error']);
+                } else {
+                    $('#result').html('Failed to make a server-side call. Check your configuration and console');
+                }
+            }
+        });
+    }
+}
+
+
+function onSigninFailure(error){
+    console.log(error)
+}
+</script>
 {% endblock %}

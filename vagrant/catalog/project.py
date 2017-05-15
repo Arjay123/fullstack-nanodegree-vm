@@ -1,11 +1,24 @@
 import random
+import hashlib
+import os
 
 from flask import Flask, render_template, url_for, request, redirect, flash
+from flask import session as login_session
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 from database_setup import Item, User, ItemList, Base, create_db
+
+from oauth2client import client
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
+import httplib2
+import json
+
+from flask import make_response
+import requests
+
 
 db_uri = "sqlite:///itemcatalog.db"
 engine = create_engine(db_uri)
@@ -15,6 +28,8 @@ session = DBSession()
 app = Flask(__name__)
 app.secret_key = "sosecret"
 
+
+CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
 def get_categories():
     """
@@ -106,7 +121,9 @@ def itemPage(item_id):
     
 @app.route("/login")
 def loginPage():
-    return render_template("login.html")
+    state = hashlib.sha256(os.urandom(1024)).hexdigest()
+    login_session['state'] = state
+    return render_template("login.html", STATE=state)
 
 
 @app.route("/logout")
@@ -253,6 +270,99 @@ def userCreatedItems():
     items = session.query(Item).filter_by(user=user).all()
 
     return render_template("useritems.html", items=items)
+
+
+@app.route("/gconnect", methods=["POST"])
+def gconnect2():
+    """
+    Trades Google OAuth one-time code for an access token, then verifies info
+    If user info is valid, stores user information in flask session
+    """
+
+    # Check that this url was requested via the google callback method
+    if not request.headers.get('X-Requested-With'):
+        response = make_response(json.dumps('Invalid header'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Check if state variable is the same as when the login page was requested
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid state parameter.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # exchange one time code for user access token
+    try:
+        flow = flow_from_clientsecrets('client_secrets.json',
+                                    scope='',
+                                    redirect_uri='postmessage')
+        auth_code = request.data
+        credentials = flow.step2_exchange(auth_code)
+    except FlowExchangeError:
+        response = make_response(json.dumps('Unable to exchange code '
+            'for token'), 401)
+
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    if credentials.access_token_expired:
+        response = make_response(json.dumps('Access token expired'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Verify token id is same as user attempting to log in using google OAuth
+    access_token = credentials.access_token
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+           % access_token)
+    h = httplib2.Http()
+    result = json.loads(h.request(url, 'GET')[1])
+
+    google_id = credentials.id_token['sub']
+    if result['user_id'] != google_id:
+        response = make_response(
+            json.dumps("Token's user ID doesn't match given user ID."), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Verify that the access token is valid for this app.
+    if result['issued_to'] != CLIENT_ID:
+        response = make_response(
+            json.dumps("Token's client ID does not match app's."), 401)
+        print "Token's client ID does not match app's."
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Check if user is connected
+    stored_access_token = login_session.get('access_token')
+    stored_google_id = login_session.get('google_id')
+    if stored_access_token is not None and google_id == stored_google_id:
+        response = make_response(json.dumps('Current user is already '
+            'connected.'), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Store the access token in the session for later use.
+    login_session['access_token'] = credentials.access_token
+    login_session['google_id'] = google_id
+
+    # Get user info
+    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    params = {'access_token': credentials.access_token, 'alt': 'json'}
+    answer = requests.get(userinfo_url, params=params)
+
+    data = answer.json()
+
+    login_session['username'] = data['name']
+    login_session['picture'] = data['picture']
+    login_session['email'] = data['email']
+
+
+@app.route("/success")
+def success():
+    flash("You are now logged in as %s" % login_session['username'], "success")
+    return redirect(url_for('homepage'))
+
+
 
 
 
