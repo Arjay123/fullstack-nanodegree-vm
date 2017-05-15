@@ -99,3 +99,5 @@ ENV/
 /.vagrant
 .DS_Store
 */.DS_Store
+
+catalog/client_secrets.json
