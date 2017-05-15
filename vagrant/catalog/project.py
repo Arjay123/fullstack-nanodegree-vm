@@ -312,10 +312,9 @@ def gconnect2():
 
     # Verify token id is same as user attempting to log in using google OAuth
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
-    h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
+    response = requests.get(url, params={'access_token': access_token})
+    result = response.json()
 
     google_id = credentials.id_token['sub']
     if result['user_id'] != google_id:
@@ -336,15 +335,17 @@ def gconnect2():
     stored_access_token = login_session.get('access_token')
     stored_google_id = login_session.get('google_id')
     if stored_access_token is not None and google_id == stored_google_id:
-        response = make_response(json.dumps('Current user is already '
-            'connected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        '''response = make_response(json.dumps('Current user is already '
+                                    'connected.'), 200)
+                                response.headers['Content-Type'] = 'application/json'
+                                return response'''
+        pass
 
     # Store the access token in the session for later use.
     login_session['access_token'] = credentials.access_token
     login_session['google_id'] = google_id
-
+    print login_session.get('access_token')
+    
     # Get user info
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
@@ -355,6 +356,12 @@ def gconnect2():
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
+    print "AAAAA"
+
+    response = make_response(json.dumps('Current user is already '
+                                    'connected.'), 200)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 @app.route("/success")
@@ -362,6 +369,25 @@ def success():
     flash("You are now logged in as %s" % login_session['username'], "success")
     return redirect(url_for('homepage'))
 
+
+@app.route("/gdisconnect")
+def gdisconnect():
+
+    url = ('https://accounts.google.com/o/oauth2/revoke')
+    result = requests.get(url, params={'token': login_session['access_token']})
+    print login_session['access_token']
+    print result
+
+    if result.status_code == 200:
+        del login_session['access_token']
+        del login_session['google_id']
+        del login_session['username']
+        del login_session['picture']
+        del login_session['email']
+
+
+    flash("You are logged out", "danger")
+    return redirect(url_for('homepage'))
 
 
 
