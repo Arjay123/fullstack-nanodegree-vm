@@ -13,7 +13,6 @@
 
         </div>
         <div class="container">
-
           <div class="navbar-header">
             <button type="button" id="navbar-min" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
               <span class="sr-only">Toggle navigation</span>
@@ -26,6 +25,15 @@
             <ul class="nav navbar-nav">
               <li class="nav-link"><a href="{{url_for('homepage')}}">Home</a></li>
               <li class="nav-link"><a href="{{url_for('catalogPage')}}">Catalog</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              {% if "username" not in session %}
+              <li class="nav-link"><a href="{{url_for('loginPage')}}">Login</a>
+              {% else %}
+              <li class="nav-link"><a href="{{url_for('userCreatedItems')}}">Your Created Items</a>
+              <li class="nav-link"><a href="#">Your Item Lists</a>
+              <li class="nav-link"><a href="{{url_for('logout')}}">Logout</a>
+              {% endif %}
             </ul>
           </div><!--/.nav-collapse -->
         </div><!--/.container-fluid -->

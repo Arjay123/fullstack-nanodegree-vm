@@ -7,6 +7,7 @@ from flask import session as login_session
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import exists
 
 from database_setup import Item, User, ItemList, Base, create_db
 
@@ -41,6 +42,7 @@ ID_KEY = "user_id"
 ACCESS_TOKEN_KEY = "access_token"
 PROVIDER_KEY = "provider"
 
+LOCAL_ID = "id"
 FACEBOOK = "facebook"
 GOOGLE = "google"
 
@@ -141,8 +143,23 @@ def loginPage():
 
 
 @app.route("/logout")
-def logoutPage():
-    return "This is the logout page"
+def logout():
+    if ACCESS_TOKEN_KEY in login_session:
+        if login_session[PROVIDER_KEY] == GOOGLE:
+            result = gdisconnect()
+        else:
+            result = fbdisconnect()
+
+        if not result:
+            response = make_response(json.dumps('Failed to revoke token'), 400)
+            response.headers['Content-Type'] = 'application/json'
+            return response
+
+        login_session.clear()
+
+        flash("You are logged out", "danger")
+
+    return redirect(url_for('homepage'))
 
 
 @app.route("/create", methods=['GET', 'POST'])
@@ -164,7 +181,7 @@ def createItemPage():
         description = request.form['description']
 
         
-        user = session.query(User).filter_by(id=1).one()
+        user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
 
         params = {"name": name,
                   "category": category,
@@ -208,7 +225,7 @@ def editItemPage(item_id):
 
     #TODO - get logged in user
     item = get_item_by_id(item_id)
-    user = session.query(User).filter_by(id=1).one()
+    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
     if not item:
         return "This item doesn't exist: %s" % str(item_id)
 
@@ -221,8 +238,6 @@ def editItemPage(item_id):
         name = request.form['name']
         category = request.form['category']
         description = request.form['description']
-
-        user = session.query(User).filter_by(id=1).one()
 
 
         form_valid = True
@@ -263,12 +278,12 @@ def deleteItem(item_id):
     #TODO - get logged in user
     #TODO - add message flashing
     #TODO - redirect to user's items list page
-    user = session.query(User).filter_by(id=1).one()
+    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
     if not item:
         return "This item doesn't exist: %s" % str(item_id)
 
     if item.user != user:
-        return "You don't authorization for that"
+        return "You don't have authorization for that"
 
     session.delete(item)
     session.commit()
@@ -280,10 +295,33 @@ def deleteItem(item_id):
 def userCreatedItems():
 
     #TODO - get logged in user
-    user = session.query(User).filter_by(id=1).one()
+    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
     items = session.query(Item).filter_by(user=user).all()
 
     return render_template("useritems.html", items=items)
+
+
+@app.route("/success")
+def success():
+
+    # check if user already has an account using email
+    found = session.query(exists().where(User.email==login_session[EMAIL_KEY])).scalar() 
+
+    # if no account, create one
+    if not found:
+        print "created new user"
+        new_user = User(name=login_session[USERNAME_KEY],
+                        email=login_session[EMAIL_KEY],
+                        image=login_session[PICTURE_KEY])
+        session.add(new_user)
+        session.commit()
+
+    user = session.query(User).filter_by(email=login_session[EMAIL_KEY]).one()
+    login_session[LOCAL_ID] = user.id
+
+    flash("You are now logged in as %s" % login_session[USERNAME_KEY], "success")
+    return redirect(url_for('homepage'))
+
 
 
 @app.route("/gconnect", methods=["POST"])
@@ -382,37 +420,7 @@ def gconnect2():
     return client_response
 
 
-@app.route("/success")
-def success():
-    flash("You are now logged in as %s" % login_session[USERNAME_KEY], "success")
-    return redirect(url_for('homepage'))
 
-
-@app.route("/gdisconnect")
-def gdisconnect():
-    """
-    Revokes access token for user in Google OAuth
-    """
-
-    if "access_token" in login_session:
-        url = ('https://accounts.google.com/o/oauth2/revoke')
-        result = requests.get(url, params={'token': login_session['access_token']})
-
-
-        if result.status_code == 200:
-            del login_session['access_token']
-            del login_session['google_id']
-            del login_session['username']
-            del login_session['picture']
-            del login_session['email']
-        else:
-            response = make_response(json.dumps('Failed to revoke token'), 400)
-            response.headers['Content-Type'] = 'application/json'
-            return response
-
-        flash("You are logged out", "danger")
-
-    return redirect(url_for('homepage'))
 
 
 @app.route("/fbconnect", methods=["POST"])
@@ -506,9 +514,26 @@ def fbconnect():
     return client_response
 
 
-@app.route("/fbdisconnect")
+
+
+
+def gdisconnect():
+    """
+    Revokes access token for user in Google OAuth
+    """
+    url = ('https://accounts.google.com/o/oauth2/revoke')
+    result = requests.get(url, params={'token': login_session['access_token']})
+
+    return result.status_code == 200
+
+
 def fbdisconnect():
-    pass
+
+    url = "https://graph.facebook.com/%s/permissions" % login_session[ID_KEY]
+    params = {"access_token": login_session[ACCESS_TOKEN_KEY]}
+    result = requests.delete(url, params=params)
+
+    return result.status_code == 200
 
 
 def get_fb_app_access_token():
