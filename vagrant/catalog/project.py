@@ -18,6 +18,7 @@ import json
 
 from flask import make_response
 import requests
+import pprint
 
 
 db_uri = "sqlite:///itemcatalog.db"
@@ -30,6 +31,15 @@ app.secret_key = "sosecret"
 
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+FB_CLIENT_ID = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_id"]
+FB_CLIENT_SECRET = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_secret"]
+
+USERNAME_KEY = "username"
+PICTURE_KEY = "picture"
+EMAIL_KEY = "email"
+ID_KEY = "user_id"
+ACCESS_TOKEN_KEY = "access_token"
+
 
 def get_categories():
     """
@@ -281,15 +291,15 @@ def gconnect2():
 
     # Check that this url was requested via the google callback method
     if not request.headers.get('X-Requested-With'):
-        response = make_response(json.dumps('Invalid header'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response = make_response(json.dumps('Invalid header'), 401)
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
 
     # Check if state variable is the same as when the login page was requested
     if request.args.get('state') != login_session['state']:
-        response = make_response(json.dumps('Invalid state parameter.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response = make_response(json.dumps('Invalid state parameter.'), 401)
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
 
     # exchange one time code for user access token
     try:
@@ -299,16 +309,16 @@ def gconnect2():
         auth_code = request.data
         credentials = flow.step2_exchange(auth_code)
     except FlowExchangeError:
-        response = make_response(json.dumps('Unable to exchange code '
+        client_response = make_response(json.dumps('Unable to exchange code '
             'for token'), 401)
 
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
 
     if credentials.access_token_expired:
-        response = make_response(json.dumps('Access token expired'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response = make_response(json.dumps('Access token expired'), 401)
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
 
     # Verify token id is same as user attempting to log in using google OAuth
     access_token = credentials.access_token
@@ -318,77 +328,207 @@ def gconnect2():
 
     google_id = credentials.id_token['sub']
     if result['user_id'] != google_id:
-        response = make_response(
-            json.dumps("Token's user ID doesn't match given user ID."), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response = make_response(json.dumps("Token's user ID doesn't "
+            "match given user ID."), 401)
+
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
+
 
     # Verify that the access token is valid for this app.
     if result['issued_to'] != CLIENT_ID:
-        response = make_response(
+        client_response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
         print "Token's client ID does not match app's."
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
+
 
     # Check if user is connected
     stored_access_token = login_session.get('access_token')
     stored_google_id = login_session.get('google_id')
     if stored_access_token is not None and google_id == stored_google_id:
-        '''response = make_response(json.dumps('Current user is already '
+        client_response = make_response(json.dumps('Current user is already '
                                     'connected.'), 200)
-                                response.headers['Content-Type'] = 'application/json'
-                                return response'''
-        pass
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
+
 
     # Store the access token in the session for later use.
-    login_session['access_token'] = credentials.access_token
-    login_session['google_id'] = google_id
-    print login_session.get('access_token')
-    
-    # Get user info
+    login_session[ACCESS_TOKEN_KEY] = credentials.access_token
+    login_session[ID_KEY] = google_id
+
+
+    # Get user info to store in flask session
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
-
     data = answer.json()
 
-    login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
-    login_session['email'] = data['email']
-    print "AAAAA"
 
-    response = make_response(json.dumps('Current user is already '
-                                    'connected.'), 200)
-    response.headers['Content-Type'] = 'application/json'
-    return response
+    # Store user info in session
+    login_session[USERNAME_KEY] = data['name']
+    login_session[PICTURE_KEY] = data['picture']
+    login_session[EMAIL_KEY] = data['email']
+
+
+    client_response = make_response(json.dumps('User is logged in.'), 200)
+    client_response.headers['Content-Type'] = 'application/json'
+    return client_response
 
 
 @app.route("/success")
 def success():
-    flash("You are now logged in as %s" % login_session['username'], "success")
+    flash("You are now logged in as %s" % login_session[USERNAME_KEY], "success")
     return redirect(url_for('homepage'))
 
 
 @app.route("/gdisconnect")
 def gdisconnect():
+    """
+    Revokes access token for user in Google OAuth
+    """
 
-    url = ('https://accounts.google.com/o/oauth2/revoke')
-    result = requests.get(url, params={'token': login_session['access_token']})
-    print login_session['access_token']
-    print result
-
-    if result.status_code == 200:
-        del login_session['access_token']
-        del login_session['google_id']
-        del login_session['username']
-        del login_session['picture']
-        del login_session['email']
+    if "access_token" in login_session:
+        url = ('https://accounts.google.com/o/oauth2/revoke')
+        result = requests.get(url, params={'token': login_session['access_token']})
 
 
-    flash("You are logged out", "danger")
+        if result.status_code == 200:
+            del login_session['access_token']
+            del login_session['google_id']
+            del login_session['username']
+            del login_session['picture']
+            del login_session['email']
+        else:
+            response = make_response(json.dumps('Failed to revoke token'), 400)
+            response.headers['Content-Type'] = 'application/json'
+            return response
+
+        flash("You are logged out", "danger")
+
     return redirect(url_for('homepage'))
 
+
+@app.route("/fbconnect", methods=["POST"])
+def fbconnect():
+
+    # Check that this url was requested via the google callback method
+    if not request.headers.get('X-Requested-With'):
+        client_response = make_response(json.dumps('Invalid header'), 401)
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
+
+    # check state parameter
+    if request.args.get("state") != login_session["state"]:
+        client_response = make_response(json.dumps('Invalid state parameter.'), 401)
+        client_response.headers['Content-Type'] = 'application/json'
+        return client_response
+
+
+    # exchange short term access for long term
+    url = "https://graph.facebook.com/oauth/access_token"
+    params = {"grant_type": "fb_exchange_token",
+              "client_id": FB_CLIENT_ID,
+              "client_secret": FB_CLIENT_SECRET,
+              "fb_exchange_token": request.data,
+              "redirect_uri": "http://localhost:5000"}
+    response = requests.get(url, params=params)
+
+    r = response.json()
+    if response.status_code != 200:
+        pass
+
+    access_token = r["access_token"]
+    user_id = request.args.get("user_id")
+
+
+    # Get app access token to verify user access token
+    app_access = get_fb_app_access_token()
+    if not app_access:
+        pass
+
+    # verify access token
+    verify_url = "https://graph.facebook.com/debug_token"
+    params = {
+        "input_token": access_token,
+        "access_token": app_access,
+    }
+    response = requests.get(verify_url, params=params)
+    if response.status_code != 200:
+        pass
+
+    r = response.json()["data"]
+
+    # app id check
+    if r["app_id"] != FB_CLIENT_ID:
+        print("app id not match")
+
+    # application name check
+    if r["application"] != "ItemCatalog":
+        print("application name not match")
+
+    # is_valid check,
+    if not r["is_valid"]:
+        print("access_token no longer valid")
+
+    # user_id check
+    if r["user_id"] != user_id:
+        print("access token user id not match")
+
+
+    user_info_url = "https://graph.facebook.com/me"
+    params = {
+        "fields": "email,name,picture",
+        "access_token": access_token,
+    }
+    response = requests.get(user_info_url, params=params)
+    if response.status_code != 200:
+        pass
+
+    r = response.json()
+
+    login_session[ID_KEY] = r["id"]    
+    login_session[EMAIL_KEY] = r["email"]
+    login_session[USERNAME_KEY] = r["name"]
+    login_session[PICTURE_KEY] = r["picture"]
+    login_session[ACCESS_TOKEN_KEY] = access_token
+
+
+    client_response = make_response(json.dumps('User is logged in.'), 200)
+    client_response.headers['Content-Type'] = 'application/json'
+    return client_response
+
+
+
+def get_fb_app_access_token():
+    """
+    Retrieves access token for this app, primarily used for verifying user 
+    access tokens
+
+    Returns: Access token as string if successful
+    """
+    url = "https://graph.facebook.com/oauth/access_token"
+    params = {
+        "client_id": FB_CLIENT_ID,
+        "client_secret": FB_CLIENT_SECRET,
+        "grant_type": "client_credentials"
+    }
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        print "Error", response.json()
+        return
+
+    result = response.json()
+    app_id = result["access_token"].split('|')[0]
+
+    # Check app id matches this client id
+    if app_id != FB_CLIENT_ID:
+        print "Error", response.json()
+        return
+
+    return result["access_token"]
 
 
 
