@@ -39,6 +39,10 @@ PICTURE_KEY = "picture"
 EMAIL_KEY = "email"
 ID_KEY = "user_id"
 ACCESS_TOKEN_KEY = "access_token"
+PROVIDER_KEY = "provider"
+
+FACEBOOK = "facebook"
+GOOGLE = "google"
 
 
 def get_categories():
@@ -370,6 +374,7 @@ def gconnect2():
     login_session[USERNAME_KEY] = data['name']
     login_session[PICTURE_KEY] = data['picture']
     login_session[EMAIL_KEY] = data['email']
+    login_session[PROVIDER_KEY] = GOOGLE
 
 
     client_response = make_response(json.dumps('User is logged in.'), 200)
@@ -493,12 +498,17 @@ def fbconnect():
     login_session[USERNAME_KEY] = r["name"]
     login_session[PICTURE_KEY] = r["picture"]
     login_session[ACCESS_TOKEN_KEY] = access_token
+    login_session[PROVIDER_KEY] = FACEBOOK
 
 
     client_response = make_response(json.dumps('User is logged in.'), 200)
     client_response.headers['Content-Type'] = 'application/json'
     return client_response
 
+
+@app.route("/fbdisconnect")
+def fbdisconnect():
+    pass
 
 
 def get_fb_app_access_token():
