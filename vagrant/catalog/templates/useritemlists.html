@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+<div class="row">
+    <div class="col-xs-12">
+        <div class="dropdown pull-right">
+          <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            Filter by: Name
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+            <li><a href="{{url_for('catalogPage', category=category, order='name')}}">Name (A-Z)</a></li>
+            <li><a href="{{url_for('catalogPage', category=category, order='name_desc')}}">Name (Z-A)</a></li>
+            <li><a href="{{url_for('catalogPage', category=category, order='views_desc')}}">Most Viewed</a></li>
+            <li><a href="{{url_for('catalogPage', category=category, order='views')}}">Least Viewed</a></li>
+          </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-2">
+        <h4>Your lists</h4>
+        <ul>
+            <li><a href="#">list</a></li>
+            <li><a href="#">list</a></li>
+            <li><a href="#">list</a></li>
+            <li><a href="#">list</a></li>
+        </ul>
+    </div>
+
+    <div class="col-xs-10">
+        <div class="row item row-eq-height">
+            <div class="col-xs-4 item-image-container">
+                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
+            </div>
+            <div class="col-xs-5">
+                <h4>Item name</h4>
+                <h6>Created by Username</h6>
+                <p>Item Description</p>
+                <h6>101 views</h6>
+            </div>
+            <div class="col-xs-3">
+                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Action</a></li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li role="separator" class="divider"></li>
+                  <li><a href="#">Separated link</a></li>
+                </ul>
+                    <button type="button" class="btn btn-danger  btn-xs">
+                    Delete
+                    </button>
+            </div>
+        </div>
+        <hr>
+        <div class="row item row-eq-height">
+            <div class="col-xs-4 item-image-container">
+                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
+            </div>
+            <div class="col-xs-5">
+                <h4>Item name</h4>
+                <h6>Created by Username</h6>
+                <p>Item Description</p>
+                <h6>101 views</h6>
+            </div>
+            <div class="col-xs-3">
+                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Action</a></li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li role="separator" class="divider"></li>
+                  <li><a href="#">Separated link</a></li>
+                </ul>
+                    <button type="button" class="btn btn-danger  btn-xs">
+                    Delete
+                    </button>
+            </div>
+        </div>
+        <hr>
+        <div class="row item row-eq-height">
+            <div class="col-xs-4 item-image-container">
+                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
+            </div>
+            <div class="col-xs-5">
+                <h4>Item name</h4>
+                <h6>Created by Username</h6>
+                <p>Item Description</p>
+                <h6>101 views</h6>
+            </div>
+            <div class="col-xs-3">
+                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Action</a></li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li role="separator" class="divider"></li>
+                  <li><a href="#">Separated link</a></li>
+                </ul>
+                    <button type="button" class="btn btn-danger  btn-xs">
+                    Delete
+                    </button>
+            </div>
+        </div>
+        <hr>
+    </div>
+</div>
+
+{% endblock %}

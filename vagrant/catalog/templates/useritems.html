@@ -16,10 +16,10 @@
             {% for item in items %}
             <tbody>
             <tr>
-                <td>{{item.name}}</td>
+                <td><a href="{{url_for('itemPage', item_id=item.id)}}">{{item.name}}</a></td>
                 <td class="text-right">
-                    <a class="btn btn-primary delete" href="{{url_for('editItemPage', item_id=item.id)}}">Edit</a>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal" data-id="{{item.id}}" data-item-name="{{item.name}}">
+                    <a class="btn btn-default delete" href="{{url_for('editItemPage', item_id=item.id)}}">Edit</a>
+                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-id="{{item.id}}" data-item-name="{{item.name}}">
                     Delete
                     </button>
                 </td>
@@ -27,6 +27,7 @@
             </tbody>
             {% endfor %}
         </table>
+        <a href="{{url_for('createItemPage')}}" class="btn btn-primary modal-btn-delete">Create new item</a>
     </div>
 
 

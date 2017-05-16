@@ -301,6 +301,11 @@ def userCreatedItems():
     return render_template("useritems.html", items=items)
 
 
+@app.route("/user/lists")
+def userCreateLists():
+    return render_template("useritemlists.html")
+
+
 @app.route("/success")
 def success():
 
