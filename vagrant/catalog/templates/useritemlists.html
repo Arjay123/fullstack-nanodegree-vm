@@ -25,90 +25,63 @@
     <div class="col-xs-2">
         <h4>Your lists</h4>
         <ul>
-            <li><a href="#">list</a></li>
-            <li><a href="#">list</a></li>
-            <li><a href="#">list</a></li>
-            <li><a href="#">list</a></li>
+        {% for list in lists %}
+          <li><a href="{{url_for('userCreatedLists', list_id=list.id)}}">{{list.name}}</a></li>
+        {% endfor %}
         </ul>
+        <a data-toggle="modal" data-target="#myModal">Create new list</a>
     </div>
 
     <div class="col-xs-10">
-        <div class="row item row-eq-height">
+        
+        {% if items|length > 0 %}
+          {% for item in items %}
+          <div class="row item row-eq-height">
             <div class="col-xs-4 item-image-container">
                 <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
             </div>
             <div class="col-xs-5">
-                <h4>Item name</h4>
-                <h6>Created by Username</h6>
-                <p>Item Description</p>
-                <h6>101 views</h6>
+                <h4>{{item.name}}</h4>
+                <h6>{{item.user.name}}</h6>
+                <p>{{item.description}}</p>
+                <h6>{{item.views}} views</h6>
             </div>
             <div class="col-xs-3">
                 <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
                 <ul class="dropdown-menu">
-                  <li><a href="#">Action</a></li>
-                  <li><a href="#">Another action</a></li>
-                  <li><a href="#">Something else here</a></li>
-                  <li role="separator" class="divider"></li>
-                  <li><a href="#">Separated link</a></li>
+                  {%for list in lists %}
+                    <li><a href="#">{{list.name}}</a></li>
+                  {% endfor %}
                 </ul>
                     <button type="button" class="btn btn-danger  btn-xs">
                     Delete
                     </button>
             </div>
-        </div>
-        <hr>
-        <div class="row item row-eq-height">
-            <div class="col-xs-4 item-image-container">
-                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
-            </div>
-            <div class="col-xs-5">
-                <h4>Item name</h4>
-                <h6>Created by Username</h6>
-                <p>Item Description</p>
-                <h6>101 views</h6>
-            </div>
-            <div class="col-xs-3">
-                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                  <li><a href="#">Action</a></li>
-                  <li><a href="#">Another action</a></li>
-                  <li><a href="#">Something else here</a></li>
-                  <li role="separator" class="divider"></li>
-                  <li><a href="#">Separated link</a></li>
-                </ul>
-                    <button type="button" class="btn btn-danger  btn-xs">
-                    Delete
-                    </button>
-            </div>
-        </div>
-        <hr>
-        <div class="row item row-eq-height">
-            <div class="col-xs-4 item-image-container">
-                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
-            </div>
-            <div class="col-xs-5">
-                <h4>Item name</h4>
-                <h6>Created by Username</h6>
-                <p>Item Description</p>
-                <h6>101 views</h6>
-            </div>
-            <div class="col-xs-3">
-                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                  <li><a href="#">Action</a></li>
-                  <li><a href="#">Another action</a></li>
-                  <li><a href="#">Something else here</a></li>
-                  <li role="separator" class="divider"></li>
-                  <li><a href="#">Separated link</a></li>
-                </ul>
-                    <button type="button" class="btn btn-danger  btn-xs">
-                    Delete
-                    </button>
-            </div>
-        </div>
-        <hr>
+          </div>
+          <hr>
+          {% endfor %}
+        {% else %}
+        <h4>This list is empty! Any items added to this list will show up here.</h4>
+        {% endif %}
+            
     </div>
+</div>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Enter name of new list</h4>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{url_for('createList')}}">
+            <input type="text" name="name">
+            <button type="submit" class="btn btn-default">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% endblock %}

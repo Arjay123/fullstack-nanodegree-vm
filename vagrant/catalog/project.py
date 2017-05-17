@@ -126,14 +126,43 @@ def itemPage(item_id):
     #TODO - update item view count
     #TODO - Create this item does not exist page
     item = get_item_by_id(item_id)
+    lists = None
     if not item:
         return "This item does not exist: %s" % str(item_id)
 
     rand_items = session.query(Item).filter_by(category=item.category).all()
     sample_size = 4 if len(rand_items) >= 4 else len(rand_items)
     rand_items = random.sample(rand_items, sample_size)
-    return render_template("item.html", sel_item=item, items=rand_items)
+
+    if ACCESS_TOKEN_KEY in login_session:
+        user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
+        lists = session.query(ItemList).filter_by(user=user).all()
+
+    return render_template("item.html", sel_item=item, items=rand_items, lists=lists)
     
+
+@app.route("/listAdd/<int:list_id>/<int:item_id>")
+def addItemToList(list_id, item_id):
+    
+    item = session.query(Item).filter_by(id=item_id).first()
+    item_list = session.query(ItemList).filter_by(id=list_id).first()
+
+    if LOCAL_ID not in login_session:
+        print "no idea"
+        return
+
+    if login_session[LOCAL_ID] != item_list.user.id:
+
+        print "you don't own this list", login_session[LOCAL_ID], item_list.user.id
+        return
+
+    item_list.items.append(item)
+    session.add(item_list)
+    session.commit()
+
+
+    return redirect(url_for('itemPage', item_id=item_id))
+
     
 @app.route("/login")
 def loginPage():
@@ -302,8 +331,33 @@ def userCreatedItems():
 
 
 @app.route("/user/lists")
-def userCreateLists():
-    return render_template("useritemlists.html")
+@app.route("/user/lists/<int:list_id>")
+def userCreatedLists(list_id=None):
+
+    
+
+    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
+    lists = session.query(ItemList).filter_by(user=user).all()
+    items = []
+
+    if list_id:
+        items = session.query(ItemList).filter_by(id=list_id).one().items
+    else:
+        items = lists[0].items
+
+    return render_template("useritemlists.html", lists=lists, items=items)
+
+
+@app.route("/user/lists/create", methods=["POST"])
+def createList():
+    name = request.form['name']
+    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
+    new_list = ItemList(name=name, user=user)
+    session.add(new_list)
+    session.commit()
+
+    return redirect(url_for('userCreatedLists'))
+
 
 
 @app.route("/success")

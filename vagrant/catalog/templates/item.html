@@ -5,9 +5,6 @@
 
 {% block content %}
 
-
-
-
 <div class="row item">
     <div class="col-xs-4 item-image-container">
         <img class="img-responsive center-block" src="http://placehold.it/200x200">
@@ -20,13 +17,23 @@
     </div>
 </div>
 <div class="row item-extras">
-    <div class="col-xs-12 text-right">
+    <div class="col-xs-4 text-center">
+        {% if "username" in session %}
+        <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">
+        Add item to list <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            {%for list in lists %}
+          <li><a href="{{url_for('addItemToList', item_id=sel_item.id, list_id=list.id)}}">{{list.name}}</a></li>
+            {% endfor %}
+          
+        </ul>
+        {% endif %}
+    </div>
+    <div class="col-xs-8 text-right">
         <a class="btn btn-primary" href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a>
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal">
         Delete
         </button>
-
-
     </div>
 </div>
 <div class="row items-similar-hdr">
