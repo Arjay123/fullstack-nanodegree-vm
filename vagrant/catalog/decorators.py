@@ -71,3 +71,17 @@ def user_owns_item(f):
 
         return f(**kwargs)
     return func
+
+
+def item_in_list(f):
+    @wraps(f)
+    def func(**kwargs):
+        item = kwargs["item"]
+        item_list = kwargs["item_list"]
+
+        if item not in item_list.items:
+            print "item not in list"
+            abort(404)
+
+        return f(**kwargs)
+    return func

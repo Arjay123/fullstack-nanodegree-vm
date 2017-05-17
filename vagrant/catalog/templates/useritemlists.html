@@ -50,12 +50,12 @@
                 <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
                 <ul class="dropdown-menu">
                   {%for list in lists %}
-                    <li><a href="#">{{list.name}}</a></li>
+                    <li><a href="{{url_for('moveItemBetweenLists', item_id=item.id, from_list_id=list_id, to_list_id=list.id)}}">{{list.name}}</a></li>
                   {% endfor %}
                 </ul>
-                    <button type="button" class="btn btn-danger  btn-xs">
+                    <a href="{{url_for('removeItemFromList', item_id=item.id, list_id=list_id)}}"><button type="button"  class="btn btn-danger  btn-xs">
                     Delete
-                    </button>
+                    </button></a>
             </div>
           </div>
           <hr>
@@ -66,6 +66,7 @@
             
     </div>
 </div>
+
 
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">

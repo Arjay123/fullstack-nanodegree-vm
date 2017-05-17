@@ -17,11 +17,11 @@ from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 
-from flask import make_response
+from flask import make_response, abort
 import requests
 import pprint
 
-from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item
+from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item, item_in_list
 from database import session
 
 
@@ -143,41 +143,60 @@ def itemPage(item, **kwargs):
 @item_exists
 @list_exists
 @user_owns_list
-def addItemToList(item, item_list):
+def addItemToList(item, item_list, **kwargs):
     
-    if login_session[LOCAL_ID] != item_list.user.id:
-
-        print "you don't own this list", login_session[LOCAL_ID], item_list.user.id
-        return
-
     item_list.items.append(item)
     session.add(item_list)
     session.commit()
 
+    flash("%s has been added to list: %s" %(item.name, item_list.name), "success")
     return redirect(url_for('itemPage', item_id=kwargs["item_id"]))
 
 
+
+@app.route("/listRemove/<int:list_id>/<int:item_id>")
 @user_logged_in
-def removeItemFromList(list_id, item_id):
-    item = get_item_by_id(item_id)
-    item_list = session.query(ItemList).filter_by(id=list_id).first()
+@item_exists
+@list_exists
+@user_owns_list
+@item_in_list
+def removeItemFromList(item, item_list, **kwargs):
 
-    if not item:
-        print "Item doesn't exist"
-        return
+    item_list.items.remove(item)
+    session.add(item_list)
+    session.commit()
 
-    if not item_list:
-        print "list doesn't exist"
-        return
+    flash("%s has been removed from list: %s" % (item.name, item_list.name), "success")
+    return(redirect(url_for('userCreatedLists', list_id=item_list.id)))
 
-    if LOCAL_ID not in login_session:
-        print "not logged in"
-        return
 
-    if login_session[LOCAL_ID] != item_list.user.id:
-        print "You don't own this list"
-        return
+@app.route("/listMove/<int:item_id>/<int:from_list_id>/<int:to_list_id>")
+@user_logged_in
+@item_exists
+def moveItemBetweenLists(item, from_list_id, to_list_id, **kwargs):
     
+    from_list = session.query(ItemList).filter_by(id=from_list_id).first()
+    to_list = session.query(ItemList).filter_by(id=to_list_id).first()
+
+    if not from_list or not to_list:
+        print "list don't exist"
+        abort(404)
+
+    if item not in from_list.items:
+        print "that item is not in list"
+        abort(404)
+
+    from_list.items.remove(item)
+    to_list.items.append(item)
+
+    session.add(from_list)
+    session.add(to_list)
+    session.commit()
+
+    flash("%s has been move from list: %s to list: %s" % (item.name, from_list.name, to_list.name), "success")
+    return(redirect(url_for('userCreatedLists', list_id=from_list.id)))
+
+
 @app.route("/login")
 def loginPage():
     state = hashlib.sha256(os.urandom(1024)).hexdigest()
@@ -361,12 +380,13 @@ def userCreatedLists(user, list_id=None, item_list=None):
     else:
         if len(lists):
             items = lists[0].items
+            list_id = lists[0].id
 
-    return render_template("useritemlists.html", lists=lists, items=items)
+    return render_template("useritemlists.html", lists=lists, items=items, list_id=list_id)
 
 
 @app.route("/user/lists/create", methods=["POST"])
-@user_logged_in
+@user_logged_in 
 def createList(user):
     name = request.form['name']
     new_list = ItemList(name=name, user=user)
@@ -379,9 +399,13 @@ def createList(user):
 
 @app.route("/success")
 def success():
-
+    """
+    This route is in between a successful login and a redirect to homepage.
+    Checks if newly logged in user has an account, if not creates an account
+    """
     # check if user already has an account using email
-    found = session.query(exists().where(User.email==login_session[EMAIL_KEY])).scalar() 
+    found = session.query(exists().where(
+        User.email==login_session[EMAIL_KEY])).scalar() 
 
     # if no account, create one
     if not found:
@@ -395,7 +419,8 @@ def success():
     user = session.query(User).filter_by(email=login_session[EMAIL_KEY]).one()
     login_session[LOCAL_ID] = user.id
 
-    flash("You are now logged in as %s" % login_session[USERNAME_KEY], "success")
+    flash("You are now logged in as %s" % login_session[USERNAME_KEY],
+        "success")
     return redirect(url_for('homepage'))
 
 
@@ -404,7 +429,8 @@ def success():
 def gconnect2():
     """
     Trades Google OAuth one-time code for an access token, then verifies info
-    If user info is valid, stores user information in flask session
+    If user info is valid, stores user information in flask session, else throw
+    error
     """
 
     # Check that this url was requested via the google callback method
@@ -501,7 +527,10 @@ def gconnect2():
 
 @app.route("/fbconnect", methods=["POST"])
 def fbconnect():
-
+    """
+    Trades Facebook short time token for long time token, then verifies access
+    token info. If valid, stores user info in Flask session, else throw error
+    """
     # Check that this url was requested via the google callback method
     if not request.headers.get('X-Requested-With'):
         client_response = make_response(json.dumps('Invalid header'), 401)
@@ -604,7 +633,9 @@ def gdisconnect():
 
 
 def fbdisconnect():
-
+    """
+    Revokes access token for user in Facebook OAuth
+    """
     url = "https://graph.facebook.com/%s/permissions" % login_session[ID_KEY]
     params = {"access_token": login_session[ACCESS_TOKEN_KEY]}
     result = requests.delete(url, params=params)
