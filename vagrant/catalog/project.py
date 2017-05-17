@@ -21,15 +21,13 @@ from flask import make_response
 import requests
 import pprint
 
+from decorators import user_logged_in, item_exists
+from database import session
 
-db_uri = "sqlite:///itemcatalog.db"
-engine = create_engine(db_uri)
-Base.metadata.bind = engine
-DBSession = sessionmaker(bind=engine)
-session = DBSession()
+
 app = Flask(__name__)
 app.secret_key = "sosecret"
-
+session.rollback()
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 FB_CLIENT_ID = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_id"]
@@ -114,7 +112,8 @@ def catalogPage():
 
 
 @app.route("/catalog/<int:item_id>")
-def itemPage(item_id):
+@item_exists
+def itemPage(item, **kwargs):
     """
         Loads page for a specific item
 
@@ -125,10 +124,8 @@ def itemPage(item_id):
     #TODO - remove item from sampler set
     #TODO - update item view count
     #TODO - Create this item does not exist page
-    item = get_item_by_id(item_id)
     lists = None
-    if not item:
-        return "This item does not exist: %s" % str(item_id)
+
 
     rand_items = session.query(Item).filter_by(category=item.category).all()
     sample_size = 4 if len(rand_items) >= 4 else len(rand_items)
@@ -142,14 +139,13 @@ def itemPage(item_id):
     
 
 @app.route("/listAdd/<int:list_id>/<int:item_id>")
-def addItemToList(list_id, item_id):
+@user_logged_in
+@item_exists
+def addItemToList(list_id, **kwargs):
     
-    item = session.query(Item).filter_by(id=item_id).first()
+    item = kwargs["item"]
     item_list = session.query(ItemList).filter_by(id=list_id).first()
 
-    if LOCAL_ID not in login_session:
-        print "no idea"
-        return
 
     if login_session[LOCAL_ID] != item_list.user.id:
 
@@ -160,9 +156,29 @@ def addItemToList(list_id, item_id):
     session.add(item_list)
     session.commit()
 
+    return redirect(url_for('itemPage', item_id=kwargs["item_id"]))
 
-    return redirect(url_for('itemPage', item_id=item_id))
 
+@user_logged_in
+def removeItemFromList(list_id, item_id):
+    item = get_item_by_id(item_id)
+    item_list = session.query(ItemList).filter_by(id=list_id).first()
+
+    if not item:
+        print "Item doesn't exist"
+        return
+
+    if not item_list:
+        print "list doesn't exist"
+        return
+
+    if LOCAL_ID not in login_session:
+        print "not logged in"
+        return
+
+    if login_session[LOCAL_ID] != item_list.user.id:
+        print "You don't own this list"
+        return
     
 @app.route("/login")
 def loginPage():
@@ -171,7 +187,9 @@ def loginPage():
     return render_template("login.html", STATE=state)
 
 
+
 @app.route("/logout")
+@user_logged_in
 def logout():
     if ACCESS_TOKEN_KEY in login_session:
         if login_session[PROVIDER_KEY] == GOOGLE:
@@ -191,7 +209,9 @@ def logout():
     return redirect(url_for('homepage'))
 
 
+
 @app.route("/create", methods=['GET', 'POST'])
+@user_logged_in
 def createItemPage():
     """ 
         Loads page for creating a new item. Requires user
@@ -249,7 +269,9 @@ def createItemPage():
                             params=params)
 
 
+
 @app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
+@user_logged_in
 def editItemPage(item_id):
 
     #TODO - get logged in user
@@ -301,6 +323,7 @@ def editItemPage(item_id):
 
 
 @app.route("/catalog/<int:item_id>/delete")
+@user_logged_in
 def deleteItem(item_id):
     item = get_item_by_id(item_id)
 
@@ -320,7 +343,9 @@ def deleteItem(item_id):
     return "Okay"
 
 
+
 @app.route("/user/items")
+@user_logged_in
 def userCreatedItems():
 
     #TODO - get logged in user
@@ -332,6 +357,7 @@ def userCreatedItems():
 
 @app.route("/user/lists")
 @app.route("/user/lists/<int:list_id>")
+@user_logged_in
 def userCreatedLists(list_id=None):
 
     
@@ -349,6 +375,7 @@ def userCreatedLists(list_id=None):
 
 
 @app.route("/user/lists/create", methods=["POST"])
+@user_logged_in
 def createList():
     name = request.form['name']
     user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
