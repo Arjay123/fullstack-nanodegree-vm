@@ -6,10 +6,16 @@ from database import session
 
 def user_logged_in(f):
     @wraps(f)
-    def func(*args, **kwargs):
+    def func(**kwargs):
         if "username" not in login_session:
             return redirect(url_for('loginPage'))
-        return f(*args, **kwargs)
+        user = session.query(User).filter_by(id=login_session["id"]).first()
+        if not user:
+            abort(404)
+            print "error, user not found"
+
+        kwargs["user"] = user
+        return f(**kwargs)
     return func
 
 
@@ -24,3 +30,44 @@ def item_exists(f):
     return func
 
 
+def list_exists(f):
+    @wraps(f)
+    def func(**kwargs):
+        if "list_id" in kwargs:
+            item_list = session.query(ItemList).filter_by(
+                id=kwargs["list_id"]).first()
+
+            if not item_list:
+                abort(404)
+            kwargs["item_list"] = item_list
+        return f(**kwargs)
+    return func
+
+
+def user_owns_list(f):
+    @wraps(f)
+    def func(**kwargs):
+        if "item_list" in kwargs:
+            item_list = kwargs["item_list"]
+            user = kwargs["user"]
+
+            if item_list.user.id != user.id:
+                print "You don't own this list"
+                abort(404)
+
+        return f(**kwargs)
+    return func
+
+
+def user_owns_item(f):
+    @wraps(f)
+    def func(**kwargs):
+        item = kwargs["item"]
+        user = kwargs["user"]
+
+        if item.user.id != user.id:
+            print "You don't own this item"
+            abort(404)
+
+        return f(**kwargs)
+    return func

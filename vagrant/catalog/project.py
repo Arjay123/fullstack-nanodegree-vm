@@ -21,7 +21,7 @@ from flask import make_response
 import requests
 import pprint
 
-from decorators import user_logged_in, item_exists
+from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item
 from database import session
 
 
@@ -141,12 +141,10 @@ def itemPage(item, **kwargs):
 @app.route("/listAdd/<int:list_id>/<int:item_id>")
 @user_logged_in
 @item_exists
-def addItemToList(list_id, **kwargs):
+@list_exists
+@user_owns_list
+def addItemToList(item, item_list):
     
-    item = kwargs["item"]
-    item_list = session.query(ItemList).filter_by(id=list_id).first()
-
-
     if login_session[LOCAL_ID] != item_list.user.id:
 
         print "you don't own this list", login_session[LOCAL_ID], item_list.user.id
@@ -272,11 +270,9 @@ def createItemPage():
 
 @app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
 @user_logged_in
-def editItemPage(item_id):
-
-    #TODO - get logged in user
-    item = get_item_by_id(item_id)
-    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
+@item_exists
+@user_owns_item
+def editItemPage(user, item, item_id):
     if not item:
         return "This item doesn't exist: %s" % str(item_id)
 
@@ -324,32 +320,27 @@ def editItemPage(item_id):
 
 @app.route("/catalog/<int:item_id>/delete")
 @user_logged_in
-def deleteItem(item_id):
-    item = get_item_by_id(item_id)
+@item_exists
+@user_owns_item
+def deleteItem(user, item, item_id):
+
 
     #TODO - get logged in user
     #TODO - add message flashing
     #TODO - redirect to user's items list page
-    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
-    if not item:
-        return "This item doesn't exist: %s" % str(item_id)
-
-    if item.user != user:
-        return "You don't have authorization for that"
 
     session.delete(item)
     session.commit()
 
-    return "Okay"
+    return redirect(url_for('userCreatedItems'))
 
 
 
 @app.route("/user/items")
 @user_logged_in
-def userCreatedItems():
+def userCreatedItems(user):
 
     #TODO - get logged in user
-    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
     items = session.query(Item).filter_by(user=user).all()
 
     return render_template("useritems.html", items=items)
@@ -358,27 +349,26 @@ def userCreatedItems():
 @app.route("/user/lists")
 @app.route("/user/lists/<int:list_id>")
 @user_logged_in
-def userCreatedLists(list_id=None):
+@list_exists
+@user_owns_list
+def userCreatedLists(user, list_id=None, item_list=None):
 
-    
-
-    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
-    lists = session.query(ItemList).filter_by(user=user).all()
     items = []
+    lists = session.query(ItemList).filter_by(user=user).all()
 
     if list_id:
-        items = session.query(ItemList).filter_by(id=list_id).one().items
+        items = item_list.items
     else:
-        items = lists[0].items
+        if len(lists):
+            items = lists[0].items
 
     return render_template("useritemlists.html", lists=lists, items=items)
 
 
 @app.route("/user/lists/create", methods=["POST"])
 @user_logged_in
-def createList():
+def createList(user):
     name = request.form['name']
-    user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
     new_list = ItemList(name=name, user=user)
     session.add(new_list)
     session.commit()
