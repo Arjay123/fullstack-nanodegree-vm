@@ -166,12 +166,10 @@ def itemPage(item, **kwargs):
     return render_template("item.html", **params)
     
 
-@app.route("/listAdd/<int:list_id>/<int:item_id>")
+@app.route("/listAdd/<int:item_id>", methods=["POST"])
 @user_logged_in
 @item_exists
-@list_exists
-@user_owns_list
-def addItemToList(item, item_list, **kwargs):
+def addItemToList(user, item, **kwargs):
     """
     Adds item to item list
 
@@ -179,7 +177,17 @@ def addItemToList(item, item_list, **kwargs):
         item - item to add
         item_list - item list to add to
     """
-    
+    list_id = request.form.get("add")
+    item_list = session.query(ItemList).filter_by(id=list_id).first()
+
+    if not item_list:
+        print "item or item list does not exist"
+        abort(404)
+
+    if user.id != item_list.user.id:
+        print "you dont own that item list"
+        abort(404)
+
     item_list.items.append(item)
     session.add(item_list)
     session.commit()
@@ -221,8 +229,7 @@ def removeItemFromList(user, item, **kwargs):
     return(redirect(url_for('userCreatedLists', list_id=item_list.id)))
 
 
-@app.route("/listMove/<int:item_id>",
-    methods=["POST"])
+@app.route("/listMove/<int:item_id>", methods=["POST"])
 @user_logged_in
 @item_exists
 def moveItemBetweenLists(item, user, **kwargs):
@@ -245,6 +252,10 @@ def moveItemBetweenLists(item, user, **kwargs):
 
     if item not in from_list.items:
         print "that item is not in list"
+        abort(404)
+
+    if user.id != from_list.user.id or user.id != to_list.user.id:
+        print "you dont own those lists"
         abort(404)
 
     from_list.items.remove(item)

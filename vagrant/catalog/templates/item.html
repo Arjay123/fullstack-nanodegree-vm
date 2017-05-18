@@ -19,14 +19,15 @@
 <div class="row item-extras">
     <div class="col-xs-4 text-center">
         {% if "username" in session %}
-        <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">
-        Add item to list <span class="caret"></span></a>
-        <ul class="dropdown-menu">
+        <form method="POST" action="{{url_for('addItemToList', item_id=sel_item.id)}}">
+          <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+          <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Add item to list <span class="caret"></span></a>
+          <ul class="dropdown-menu">
             {%for list in lists %}
-          <li><a href="{{url_for('addItemToList', item_id=sel_item.id, list_id=list.id)}}">{{list.name}}</a></li>
+              <li><button type="submit" name="add" value="{{list.id}}">{{list.name}}</button></li>
             {% endfor %}
-          
-        </ul>
+          </ul>
+        </form>
         {% endif %}
     </div>
     <div class="col-xs-8 text-right">
