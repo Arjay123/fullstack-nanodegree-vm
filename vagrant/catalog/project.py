@@ -5,7 +5,7 @@ import os
 from flask import Flask, render_template, url_for, request, redirect, flash
 from flask import session as login_session
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import exists
+from sqlalchemy import exists, desc
 
 from database_setup import Item, User, ItemList, Base, create_db
 
@@ -56,7 +56,7 @@ def get_categories():
 @app.route("/")
 def homepage():
     """
-    Loads homepage
+    Loads homepage w/ most viewed items showcased
     """
     items = session.query(Item).order_by(desc(Item.views)).limit(4)
     return render_template("homepage.html", items=items)
@@ -66,6 +66,10 @@ def homepage():
 def catalogPage():
     """
     Loads catalog page
+    
+    If order specified, show items in that order. A-Z by default
+    If category selected, show items in that category. Items w/ views over
+    100 by default
     """
 
     order = request.args.get('order')
@@ -100,27 +104,36 @@ def catalogPage():
 @item_exists
 def itemPage(item, **kwargs):
     """
-        Loads page for a specific item
+    Loads page for a specific item
+    
+    Also loads list of random items (4 or less) from the same category as
+    selected item to display.
 
-        Args:
-            item_id - id of item to load
+    Args:
+        item - entity of selected item
     """
 
-    #TODO - remove item from sampler set
-    #TODO - update item view count
-    #TODO - Create this item does not exist page
-    lists = None
-
-
+    # update item view count
+    item.views += 1
+    session.add(item)
+    session.commit()
+    
+    # create list of random items to showcase
     rand_items = session.query(Item).filter_by(category=item.category).all()
+    rand_items.remove(item)
     sample_size = 4 if len(rand_items) >= 4 else len(rand_items)
     rand_items = random.sample(rand_items, sample_size)
 
-    if ACCESS_TOKEN_KEY in login_session:
+    params = {"sel_item": item,
+              "items": rand_items}
+
+    # if user logged in, pass in their item lists
+    if USERNAME_KEY in login_session:
         user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
         lists = session.query(ItemList).filter_by(user=user).all()
+        params["lists"] = lists
 
-    return render_template("item.html", sel_item=item, items=rand_items, lists=lists)
+    return render_template("item.html", **params)
     
 
 @app.route("/listAdd/<int:list_id>/<int:item_id>")
@@ -192,7 +205,7 @@ def loginPage():
 
 @app.route("/logout")
 @user_logged_in
-def logout():
+def logout(user):
     if ACCESS_TOKEN_KEY in login_session:
         if login_session[PROVIDER_KEY] == GOOGLE:
             result = gdisconnect()
@@ -594,7 +607,7 @@ def fbconnect():
     login_session[ID_KEY] = r["id"]    
     login_session[EMAIL_KEY] = r["email"]
     login_session[USERNAME_KEY] = r["name"]
-    login_session[PICTURE_KEY] = r["picture"]
+    login_session[PICTURE_KEY] = r["picture"]["data"]["url"]
     login_session[ACCESS_TOKEN_KEY] = access_token
     login_session[PROVIDER_KEY] = FACEBOOK
 
