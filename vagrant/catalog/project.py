@@ -166,9 +166,11 @@ def itemPage(item, **kwargs):
     return render_template("item.html", **params)
     
 
-@app.route("/listAdd/<int:item_id>", methods=["POST"])
+@app.route("/listAdd/<int:item_id>/<int:list_id>", methods=["POST"])
 @user_logged_in
 @item_exists
+@list_exists
+@user_owns_list
 def addItemToList(user, item, **kwargs):
     """
     Adds item to item list
@@ -177,17 +179,6 @@ def addItemToList(user, item, **kwargs):
         item - item to add
         item_list - item list to add to
     """
-    list_id = request.form.get("add")
-    item_list = session.query(ItemList).filter_by(id=list_id).first()
-
-    if not item_list:
-        print "item or item list does not exist"
-        abort(404)
-
-    if user.id != item_list.user.id:
-        print "you dont own that item list"
-        abort(404)
-
     item_list.items.append(item)
     session.add(item_list)
     session.commit()
@@ -198,9 +189,11 @@ def addItemToList(user, item, **kwargs):
 
 
 
-@app.route("/listRemove/<int:item_id>", methods=["POST"])
+@app.route("/listRemove/<int:item_id>/<int:list_id>", methods=["POST"])
 @user_logged_in
 @item_exists
+@list_exists
+@user_owns_list
 def removeItemFromList(user, item, **kwargs):
     """
     Remove item from item list
@@ -208,17 +201,6 @@ def removeItemFromList(user, item, **kwargs):
     item - item to remove
     item_list - itemlist to remove from
     """
-    list_id = request.form.get("list_id")
-    item_list = session.query(ItemList).filter_by(id=list_id).first()
-
-    if not item_list:
-        print "item or item list does not exist"
-        abort(404)
-
-    if user.id != item_list.user.id:
-        print "you dont own that item list"
-        abort(404)
-
     item_list.items.remove(item)
     session.add(item_list)
     session.commit()
@@ -460,20 +442,15 @@ def userCreatedLists(user, list_id=None, item_list=None):
     list_id - id of selected list
     item_list - selected list
     """
-    items = []
     lists = session.query(ItemList).filter_by(user=user).all()
 
-    if list_id:
-        items = item_list.items
-    else:
+    if not list_id:
         if len(lists):
-            items = lists[0].items
-            list_id = lists[0].id
+            item_list = lists[0]
 
     return render_template("useritemlists.html",
                            lists=lists,
-                           items=items,
-                           list_id=list_id)
+                           sel_list=item_list)
 
 
 @app.route("/user/lists/create", methods=["POST"])
@@ -493,33 +470,40 @@ def createList(user):
     return redirect(url_for('userCreatedLists'))
 
 
-@app.route("/user/lists/edit/<int: list_id>", methods=["GET", "POST"])
+@app.route("/user/lists/edit/<int:list_id>", methods=["POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
-def editList(user, item_list):
-    if request.method == "POST":
-        new_name = request.form['name']
+def editList(user, item_list, **kwargs):
+    """
+    Edits list name
 
-        item_list.name = new_name
-        session.add(item_list)
-        session.commit()
+    Args:
+        user - user editing the list
+        item_list - list to be edited
+    """
+    new_name = request.form['name']
 
-        return redirect(url_for('userCreatedLists'))
+    item_list.name = new_name
+    session.add(item_list)
+    session.commit()
+
+    return redirect(url_for('userCreatedLists'))
 
     return "Edit page"
 
 
-@app.route("/user/lists/delete/<int: list_id>", methods=["POST"])
+@app.route("/user/lists/delete/<int:list_id>", methods=["POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
-def deleteList(user, item_list):
+def deleteList(user, item_list, **kwargs):
     """
     Deletes a list
 
     Args:
         user - user deleting the list
+        item_list - list to be deleted
     """
     session.delete(item_list)
     session.commit()
