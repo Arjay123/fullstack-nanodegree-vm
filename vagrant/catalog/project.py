@@ -446,8 +446,8 @@ def userCreatedItems(user):
     return render_template("useritems.html", items=items)
 
 
-@app.route("/user/lists", methods=["GET", "POST"])
-@app.route("/user/lists/<int:list_id>", methods=["GET", "POST"])
+@app.route("/user/lists")
+@app.route("/user/lists/<int:list_id>")
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -460,15 +460,6 @@ def userCreatedLists(user, list_id=None, item_list=None):
     list_id - id of selected list
     item_list - selected list
     """
-    if request.method == "POST":
-        if request.form.get("move"):
-            print "move"
-        elif request.form.get("delete"):
-            print "delete"
-        print request.form.get("list_id")
-        print request.form.get("item_id")
-
-
     items = []
     lists = session.query(ItemList).filter_by(user=user).all()
 
@@ -501,6 +492,39 @@ def createList(user):
 
     return redirect(url_for('userCreatedLists'))
 
+
+@app.route("/user/lists/edit/<int: list_id>", methods=["GET", "POST"])
+@user_logged_in
+@list_exists
+@user_owns_list
+def editList(user, item_list):
+    if request.method == "POST":
+        new_name = request.form['name']
+
+        item_list.name = new_name
+        session.add(item_list)
+        session.commit()
+
+        return redirect(url_for('userCreatedLists'))
+
+    return "Edit page"
+
+
+@app.route("/user/lists/delete/<int: list_id>", methods=["POST"])
+@user_logged_in
+@list_exists
+@user_owns_list
+def deleteList(user, item_list):
+    """
+    Deletes a list
+
+    Args:
+        user - user deleting the list
+    """
+    session.delete(item_list)
+    session.commit()
+
+    return redirect(url_for('userCreatedLists'))
 
 
 @app.route("/success")
