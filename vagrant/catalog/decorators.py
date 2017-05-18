@@ -5,6 +5,10 @@ from database import session
 
 
 def user_logged_in(f):
+    """
+    Checks if user is logged in. If not logged in, redirect to login page.
+    Adds user obj for logged in user to kwargs
+    """
     @wraps(f)
     def func(**kwargs):
         if "username" not in login_session:
@@ -20,6 +24,9 @@ def user_logged_in(f):
 
 
 def item_exists(f):
+    """
+    Checks if item exists using id. If found, adds item to kwargs
+    """
     @wraps(f)
     def func(**kwargs):
         item = session.query(Item).filter_by(id=kwargs["item_id"]).first()
@@ -31,6 +38,9 @@ def item_exists(f):
 
 
 def list_exists(f):
+    """
+    Checks if list exists using id. If found, adds list to kwargs
+    """
     @wraps(f)
     def func(**kwargs):
         if "list_id" in kwargs:
@@ -45,6 +55,9 @@ def list_exists(f):
 
 
 def user_owns_list(f):
+    """
+    Checks if user owns list
+    """
     @wraps(f)
     def func(**kwargs):
         if "item_list" in kwargs:
@@ -60,6 +73,9 @@ def user_owns_list(f):
 
 
 def user_owns_item(f):
+    """
+    Checks if user owns item
+    """
     @wraps(f)
     def func(**kwargs):
         item = kwargs["item"]
@@ -74,6 +90,9 @@ def user_owns_item(f):
 
 
 def item_in_list(f):
+    """
+    Checks if item exists in list
+    """
     @wraps(f)
     def func(**kwargs):
         item = kwargs["item"]

@@ -13,7 +13,7 @@ engine = create_engine(db_uri)
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
-        
+
 
 class TestCatalogDB(unittest.TestCase):
 

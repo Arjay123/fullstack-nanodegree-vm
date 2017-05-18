@@ -4,8 +4,6 @@ import os
 
 from flask import Flask, render_template, url_for, request, redirect, flash
 from flask import session as login_session
-from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import exists
 
@@ -14,12 +12,11 @@ from database_setup import Item, User, ItemList, Base, create_db
 from oauth2client import client
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
-import httplib2
 import json
 
 from flask import make_response, abort
 import requests
-import pprint
+
 
 from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item, item_in_list
 from database import session
@@ -39,8 +36,8 @@ EMAIL_KEY = "email"
 ID_KEY = "user_id"
 ACCESS_TOKEN_KEY = "access_token"
 PROVIDER_KEY = "provider"
-
 LOCAL_ID = "id"
+
 FACEBOOK = "facebook"
 GOOGLE = "google"
 
@@ -54,18 +51,6 @@ def get_categories():
     """
     categories = session.query(Item.category).group_by(Item.category).all()
     return [cat[0] for cat in categories]
-
-def get_item_by_id(item_id):
-    """
-    Retrieves item by its id
-
-    Return:
-        Item if found, else None
-    """
-    q = session.query(Item).filter_by(id=item_id)
-    if session.query(q.exists()).scalar():
-        return q.one()
-
 
 
 @app.route("/")
