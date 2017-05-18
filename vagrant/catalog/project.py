@@ -42,6 +42,36 @@ FACEBOOK = "facebook"
 GOOGLE = "google"
 
 
+@app.before_request
+def csrf_protect():
+    """
+    Check to see if POST request contains same csrf token as the one passed
+    in when the form was requested. 
+
+    Exception for third party routes b/c they are already protected by
+    state tokens.
+
+    Part of this code is from the url: http://flask.pocoo.org/snippets/3/
+    by Dan Jacob and has been provided free of use.
+    """
+    if request.method == "POST" and "connect" not in request.path:
+        
+        token = login_session.pop('_csrf_token', None)
+        print token, request.path
+        if not token or token != request.form.get('_csrf_token'):
+            abort(403)
+
+
+def generate_csrf_token():
+    if "_csrf_token" not in login_session:
+        login_session["_csrf_token"] = hashlib.sha256(
+            os.urandom(1024)).hexdigest()
+    return login_session["_csrf_token"]
+
+app.jinja_env.globals["csrf_token"] = generate_csrf_token
+
+
+
 def get_categories():
     """
     Retrieves all available item catagories
@@ -160,19 +190,27 @@ def addItemToList(item, item_list, **kwargs):
 
 
 
-@app.route("/listRemove/<int:list_id>/<int:item_id>")
+@app.route("/listRemove/<int:item_id>", methods=["POST"])
 @user_logged_in
 @item_exists
-@list_exists
-@user_owns_list
-@item_in_list
-def removeItemFromList(item, item_list, **kwargs):
+def removeItemFromList(user, item, **kwargs):
     """
     Remove item from item list
 
     item - item to remove
     item_list - itemlist to remove from
     """
+    list_id = request.form.get("list_id")
+    item_list = session.query(ItemList).filter_by(id=list_id).first()
+
+    if not item_list:
+        print "item or item list does not exist"
+        abort(404)
+
+    if user.id != item_list.user.id:
+        print "you dont own that item list"
+        abort(404)
+
     item_list.items.remove(item)
     session.add(item_list)
     session.commit()
@@ -183,10 +221,11 @@ def removeItemFromList(item, item_list, **kwargs):
     return(redirect(url_for('userCreatedLists', list_id=item_list.id)))
 
 
-@app.route("/listMove/<int:item_id>/<int:from_list_id>/<int:to_list_id>")
+@app.route("/listMove/<int:item_id>",
+    methods=["POST"])
 @user_logged_in
 @item_exists
-def moveItemBetweenLists(item, from_list_id, to_list_id, **kwargs):
+def moveItemBetweenLists(item, user, **kwargs):
     """
     Move item from one list to another
 
@@ -194,6 +233,9 @@ def moveItemBetweenLists(item, from_list_id, to_list_id, **kwargs):
     from_list_id - id of list to move from
     to_list_id - id of list to move to
     """
+    from_list_id = request.form.get("from_list_id")
+    to_list_id = request.form.get("move")
+
     from_list = session.query(ItemList).filter_by(id=from_list_id).first()
     to_list = session.query(ItemList).filter_by(id=to_list_id).first()
 
@@ -256,7 +298,7 @@ def logout(user):
 
 @app.route("/create", methods=['GET', 'POST'])
 @user_logged_in
-def createItemPage():
+def createItemPage(user):
     """ 
     Loads page for creating a new item. Requires user to be logged in
     """
@@ -267,8 +309,6 @@ def createItemPage():
         name = request.form['name']
         category = request.form['category']
         description = request.form['description']
-
-        user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
 
         params = {"name": name,
                   "category": category,
@@ -363,7 +403,7 @@ def editItemPage(item, **kwargs):
 
 
 
-@app.route("/catalog/<int:item_id>/delete")
+@app.route("/catalog/<int:item_id>/delete", methods=["POST"])
 @user_logged_in
 @item_exists
 @user_owns_item
@@ -395,8 +435,8 @@ def userCreatedItems(user):
     return render_template("useritems.html", items=items)
 
 
-@app.route("/user/lists")
-@app.route("/user/lists/<int:list_id>")
+@app.route("/user/lists", methods=["GET", "POST"])
+@app.route("/user/lists/<int:list_id>", methods=["GET", "POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -409,6 +449,15 @@ def userCreatedLists(user, list_id=None, item_list=None):
     list_id - id of selected list
     item_list - selected list
     """
+    if request.method == "POST":
+        if request.form.get("move"):
+            print "move"
+        elif request.form.get("delete"):
+            print "delete"
+        print request.form.get("list_id")
+        print request.form.get("item_id")
+
+
     items = []
     lists = session.query(ItemList).filter_by(user=user).all()
 

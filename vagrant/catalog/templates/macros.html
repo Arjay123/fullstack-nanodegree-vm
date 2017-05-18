@@ -1,6 +1,7 @@
 {% macro item_form(name, category, description, errors, categories) %}
 
 <form class="form-horizontal" method="POST">
+    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
     <div class="form-group">
         <label for="item-name-input" class="col-xs-2">Name</label>
         <div class="col-xs-10">

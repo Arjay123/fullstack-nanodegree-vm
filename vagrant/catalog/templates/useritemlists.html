@@ -47,15 +47,22 @@
                 <h6>{{item.views}} views</h6>
             </div>
             <div class="col-xs-3">
-                <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                  {%for list in lists %}
-                    <li><a href="{{url_for('moveItemBetweenLists', item_id=item.id, from_list_id=list_id, to_list_id=list.id)}}">{{list.name}}</a></li>
-                  {% endfor %}
-                </ul>
-                    <a href="{{url_for('removeItemFromList', item_id=item.id, list_id=list_id)}}"><button type="button"  class="btn btn-danger  btn-xs">
-                    Delete
-                    </button></a>
+              <form method="POST" action="{{url_for('moveItemBetweenLists', item_id=item.id)}}">
+                  <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+                  <input name="item_id" type=hidden value="{{item.id}}">
+                  <input name="from_list_id" type=hidden value="{{list_id}}">
+                  <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    {%for list in lists %}
+                      <li><button type="submit" name="move" value="{{list.id}}">{{list.name}}</button></li>
+                    {% endfor %}
+                  </ul>
+              </form>
+              <form method="POST" action="{{url_for('removeItemFromList', item_id=item.id)}}">
+                  <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+                  <input name="list_id" type=hidden value="{{list_id}}">
+                  <input type="submit" type="button" value="Delete" class="btn btn-danger btn-xs">
+              </form>
             </div>
           </div>
           <hr>
@@ -77,6 +84,7 @@
       </div>
       <div class="modal-body">
         <form method="POST" action="{{url_for('createList')}}">
+            <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
             <input type="text" name="name">
             <button type="submit" class="btn btn-default">Create</button>
         </form>
