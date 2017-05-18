@@ -26,7 +26,7 @@ app = Flask(__name__)
 app.secret_key = "sosecret"
 session.rollback()
 
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+CLIENT_ID = json.loads(open('client_secrets.json','r').read())['web']['client_id']
 FB_CLIENT_ID = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_id"]
 FB_CLIENT_SECRET = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_secret"]
 
@@ -142,12 +142,20 @@ def itemPage(item, **kwargs):
 @list_exists
 @user_owns_list
 def addItemToList(item, item_list, **kwargs):
+    """
+    Adds item to item list
+
+    Args:
+        item - item to add
+        item_list - item list to add to
+    """
     
     item_list.items.append(item)
     session.add(item_list)
     session.commit()
 
-    flash("%s has been added to list: %s" %(item.name, item_list.name), "success")
+    flash("%s has been added to list: %s" %(item.name, item_list.name),
+          "success")
     return redirect(url_for('itemPage', item_id=kwargs["item_id"]))
 
 
@@ -159,12 +167,19 @@ def addItemToList(item, item_list, **kwargs):
 @user_owns_list
 @item_in_list
 def removeItemFromList(item, item_list, **kwargs):
+    """
+    Remove item from item list
 
+    item - item to remove
+    item_list - itemlist to remove from
+    """
     item_list.items.remove(item)
     session.add(item_list)
     session.commit()
 
-    flash("%s has been removed from list: %s" % (item.name, item_list.name), "success")
+    flash("%s has been removed from list: %s" % (item.name, item_list.name),
+          "success")
+
     return(redirect(url_for('userCreatedLists', list_id=item_list.id)))
 
 
@@ -172,7 +187,13 @@ def removeItemFromList(item, item_list, **kwargs):
 @user_logged_in
 @item_exists
 def moveItemBetweenLists(item, from_list_id, to_list_id, **kwargs):
-    
+    """
+    Move item from one list to another
+
+    item - item to be moved
+    from_list_id - id of list to move from
+    to_list_id - id of list to move to
+    """
     from_list = session.query(ItemList).filter_by(id=from_list_id).first()
     to_list = session.query(ItemList).filter_by(id=to_list_id).first()
 
@@ -191,35 +212,43 @@ def moveItemBetweenLists(item, from_list_id, to_list_id, **kwargs):
     session.add(to_list)
     session.commit()
 
-    flash("%s has been move from list: %s to list: %s" % (item.name, from_list.name, to_list.name), "success")
+    flash("%s has been move from list: %s to list: %s" %
+          (item.name, from_list.name, to_list.name), "success")
+
     return(redirect(url_for('userCreatedLists', list_id=from_list.id)))
 
 
 @app.route("/login")
 def loginPage():
+    """
+    Login page
+    """
+
+    # generate state var for validation after login attemp
     state = hashlib.sha256(os.urandom(1024)).hexdigest()
     login_session['state'] = state
     return render_template("login.html", STATE=state)
 
 
-
 @app.route("/logout")
 @user_logged_in
 def logout(user):
-    if ACCESS_TOKEN_KEY in login_session:
-        if login_session[PROVIDER_KEY] == GOOGLE:
-            result = gdisconnect()
-        else:
-            result = fbdisconnect()
+    """
+    Logout user based on third-party oauth provider
+    """
+    if login_session[PROVIDER_KEY] == GOOGLE:
+        result = gdisconnect()
+    else:
+        result = fbdisconnect()
 
-        if not result:
-            response = make_response(json.dumps('Failed to revoke token'), 400)
-            response.headers['Content-Type'] = 'application/json'
-            return response
+    login_session.clear()
 
-        login_session.clear()
+    if not result:
+        response = make_response(json.dumps('Failed to revoke token'), 400)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
-        flash("You are logged out", "danger")
+    flash("You are logged out", "danger")
 
     return redirect(url_for('homepage'))
 
@@ -229,13 +258,8 @@ def logout(user):
 @user_logged_in
 def createItemPage():
     """ 
-        Loads page for creating a new item. Requires user
-        to be logged in
+    Loads page for creating a new item. Requires user to be logged in
     """
-
-    # TODO - Check user login, if none, defer to login page
-    #TODO - set user to logged in user
-
     errors = {}
     params = {}
 
@@ -244,7 +268,6 @@ def createItemPage():
         category = request.form['category']
         description = request.form['description']
 
-        
         user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
 
         params = {"name": name,
@@ -263,7 +286,6 @@ def createItemPage():
         if not description:
             form_valid = False
             errors['description'] = "Item description is required"
-
 
         if form_valid:
             new_item = Item(name=name,
@@ -289,12 +311,18 @@ def createItemPage():
 @user_logged_in
 @item_exists
 @user_owns_item
-def editItemPage(user, item, item_id):
+def editItemPage(item, **kwargs):
+    """
+    Load page for editing item.
+
+    Args:
+        item - item to be edited
+    """
     if not item:
-        return "This item doesn't exist: %s" % str(item_id)
+        return "This item doesn't exist: %s" % str(item.id)
 
     if item.user != user:
-        return "You don't authorization for that"
+        return "You don't have authorization for that"
 
     errors = {}
 
@@ -325,8 +353,8 @@ def editItemPage(user, item, item_id):
             session.commit()
             flash("Item edits have been saved", "success")
         else:
-            flash("Item edit has failed, see errors below", "danger")
-
+            flash("Item edit has failed, fix errors below and try again",
+                  "danger")
 
     return render_template("edit.html",
                            item=item,
@@ -339,8 +367,12 @@ def editItemPage(user, item, item_id):
 @user_logged_in
 @item_exists
 @user_owns_item
-def deleteItem(user, item, item_id):
+def deleteItem(item, **kwargs):
+    """
+    Deletes item
 
+    item - item to be deleted
+    """
 
     #TODO - get logged in user
     #TODO - add message flashing
@@ -349,17 +381,17 @@ def deleteItem(user, item, item_id):
     session.delete(item)
     session.commit()
 
+    flash("%s has been deleted." % item.name, "success")
     return redirect(url_for('userCreatedItems'))
-
 
 
 @app.route("/user/items")
 @user_logged_in
 def userCreatedItems(user):
-
-    #TODO - get logged in user
+    """
+    Loads manager page for all items created by user
+    """
     items = session.query(Item).filter_by(user=user).all()
-
     return render_template("useritems.html", items=items)
 
 
@@ -369,7 +401,14 @@ def userCreatedItems(user):
 @list_exists
 @user_owns_list
 def userCreatedLists(user, list_id=None, item_list=None):
+    """
+    Loads users created item lists page. If no list is selected, loads first
+    one by default if any exist.
 
+    user - user that created lists
+    list_id - id of selected list
+    item_list - selected list
+    """
     items = []
     lists = session.query(ItemList).filter_by(user=user).all()
 
@@ -380,12 +419,21 @@ def userCreatedLists(user, list_id=None, item_list=None):
             items = lists[0].items
             list_id = lists[0].id
 
-    return render_template("useritemlists.html", lists=lists, items=items, list_id=list_id)
+    return render_template("useritemlists.html",
+                           lists=lists,
+                           items=items,
+                           list_id=list_id)
 
 
 @app.route("/user/lists/create", methods=["POST"])
 @user_logged_in 
 def createList(user):
+    """
+    Creates a new list
+
+    Args:
+    user - user that is creating the list
+    """
     name = request.form['name']
     new_list = ItemList(name=name, user=user)
     session.add(new_list)
@@ -439,7 +487,8 @@ def gconnect2():
 
     # Check if state variable is the same as when the login page was requested
     if request.args.get('state') != login_session['state']:
-        client_response = make_response(json.dumps('Invalid state parameter.'), 401)
+        client_response = make_response(
+            json.dumps('Invalid state parameter.'), 401)
         client_response.headers['Content-Type'] = 'application/json'
         return client_response
 
@@ -458,7 +507,9 @@ def gconnect2():
         return client_response
 
     if credentials.access_token_expired:
-        client_response = make_response(json.dumps('Access token expired'), 401)
+        client_response = make_response(
+            json.dumps('Access token expired'), 401)
+
         client_response.headers['Content-Type'] = 'application/json'
         return client_response
 
@@ -520,14 +571,12 @@ def gconnect2():
     return client_response
 
 
-
-
-
 @app.route("/fbconnect", methods=["POST"])
 def fbconnect():
     """
-    Trades Facebook short time token for long time token, then verifies access
-    token info. If valid, stores user info in Flask session, else throw error
+    Trades Facebook short time token for long time token, then 
+    verifies access token info. If valid, stores user info in 
+    Flask session, else throw error
     """
     # Check that this url was requested via the google callback method
     if not request.headers.get('X-Requested-With'):
@@ -537,7 +586,8 @@ def fbconnect():
 
     # check state parameter
     if request.args.get("state") != login_session["state"]:
-        client_response = make_response(json.dumps('Invalid state parameter.'), 401)
+        client_response = make_response(
+            json.dumps('Invalid state parameter.'), 401)
         client_response.headers['Content-Type'] = 'application/json'
         return client_response
 
@@ -615,9 +665,6 @@ def fbconnect():
     client_response = make_response(json.dumps('User is logged in.'), 200)
     client_response.headers['Content-Type'] = 'application/json'
     return client_response
-
-
-
 
 
 def gdisconnect():
