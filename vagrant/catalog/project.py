@@ -460,7 +460,16 @@ def userCreatedItems(user):
 def userPage(user_id):
     user = session.query(User).filter_by(id=user_id).first()
     user_items = session.query(Item).filter_by(user=user).all()
-    return render_template("user.html")
+    user_lists = session.query(ItemList).filter_by(user=user).all()
+    user_lists = [l.serialize for l in user_lists if l.public]
+
+    params = {
+        "user_name": user.name,
+        "user_image": user.image,
+        "user_items": user_items,
+        "user_lists": user_lists
+    }
+    return render_template("user.html", **params)
 
 
 
@@ -508,7 +517,7 @@ def createList(user):
     return redirect(url_for('userCreatedLists'))
 
 
-@app.route("/lists/edit/<int:list_id>", methods=["POST"])
+@app.route("/lists/edit/<int:list_id>", methods=["GET", "POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -520,15 +529,19 @@ def editList(user, item_list, **kwargs):
         user - user editing the list
         item_list - list to be edited
     """
-    new_name = request.form['name']
+    errors = {}
+    if request.method == "POST":
 
-    item_list.name = new_name
-    session.add(item_list)
-    session.commit()
+        new_name = request.form['name']
+        new_public = request.form['public']
+        item_list.name = new_name
+        item_list.public = new_public
+        session.add(item_list)
+        session.commit()
 
-    return redirect(url_for('userCreatedLists'))
-
-    return "Edit page"
+        
+    
+    return render_template("editlist.html", list=item_list, errors=errors)    
 
 
 @app.route("/lists/delete/<int:list_id>", methods=["POST"])
@@ -546,6 +559,7 @@ def deleteList(user, item_list, **kwargs):
     session.delete(item_list)
     session.commit()
 
+    flash("List: %s has been deleted" % item_list.name, "danger")
     return redirect(url_for('userCreatedLists'))
 
 
