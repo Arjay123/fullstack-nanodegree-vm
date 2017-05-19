@@ -95,6 +95,8 @@ def itemPageJSON(item, **kwargs):
 
 @app.route("/user/<int:user_id>.json")
 def userJSON(user_id):
+
+    # TODO - create user exists decorator
     user = session.query(User).filter_by(id=user_id).first()
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
@@ -222,6 +224,7 @@ def addItemToList(user, item, item_list, **kwargs):
 @item_exists
 @list_exists
 @user_owns_list
+@item_in_list
 def removeItemFromList(user, item, item_list, **kwargs):
     """
     Remove item from item list
@@ -282,11 +285,13 @@ def moveItemBetweenLists(item, user, **kwargs):
 
 
 @app.route("/login")
+@user_logged_in
 def loginPage():
     """
     Login page
     """
-
+    if user:
+        return redirect(url_for('homepage'))
     # generate state var for validation after login attemp
     state = hashlib.sha256(os.urandom(1024)).hexdigest()
     login_session['state'] = state
@@ -458,6 +463,8 @@ def userCreatedItems(user):
 
 @app.route("/user/<int:user_id>")
 def userPage(user_id):
+
+    # TODO - create user exists decorator
     user = session.query(User).filter_by(id=user_id).first()
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
@@ -509,6 +516,9 @@ def createList(user):
     Args:
     user - user that is creating the list
     """
+
+    # TODO - Valid name
+    # TODO - return errors if necessary
     name = request.form['name']
     new_list = ItemList(name=name, user=user)
     session.add(new_list)
@@ -529,6 +539,9 @@ def editList(user, item_list, **kwargs):
         user - user editing the list
         item_list - list to be edited
     """
+    # TODO - Check name, get value of checkbox
+    # TODO - flash message success
+    # TODO - return errors if needed
     errors = {}
     if request.method == "POST":
 
@@ -539,7 +552,7 @@ def editList(user, item_list, **kwargs):
         session.add(item_list)
         session.commit()
 
-        
+
     
     return render_template("editlist.html", list=item_list, errors=errors)    
 
