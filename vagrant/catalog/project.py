@@ -130,7 +130,13 @@ def catalogPage():
                             items=items)
 
 
-
+@app.route("/catalog/<int:item_id>.json")
+@item_exists
+def itemPageJSON(item, **kwargs):
+    """
+    Loads serialized JSON format of item
+    """
+    return jsonify(item=item.serialize)
 
 
 @app.route("/catalog/<int:item_id>")

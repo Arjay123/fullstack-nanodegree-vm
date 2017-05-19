@@ -29,6 +29,15 @@ class User(Base):
     image = Column(String(250))
 
 
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'image': self.image
+        }
+
 """
 Table that holds which items are held in item list
 """
@@ -63,6 +72,19 @@ class Item(Base):
     user = relationship(User)
 
 
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'description': self.description,
+            'views': self.views,
+            'user_id': self.user_id,
+            'user': self.user.serialize
+        }
+
+
 class ItemList(Base):
     """
     Represents an ItemList in db.
@@ -83,6 +105,21 @@ class ItemList(Base):
     items = relationship("Item",
                          secondary=itemlist_table,
                          passive_deletes=True)
+
+
+    @property
+    def serialize(self):
+        return{
+            'id': self.id,
+            'name': self.name,
+            'user_id': self.name,
+            'user': self.user.serialize,
+            'items': self.serialize_items
+        }
+
+    @property
+    def serialize_items(self):
+        return [item.sierialize for item in self.items]
 
 
 def create_db(uri="sqlite:///itemcatalog.db"):
