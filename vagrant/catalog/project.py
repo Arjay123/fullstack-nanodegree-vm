@@ -2,7 +2,7 @@ import random
 import hashlib
 import os
 
-from flask import Flask, render_template, url_for, request, redirect, flash
+from flask import Flask, render_template, url_for, request, redirect, flash, jsonify
 from flask import session as login_session
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import exists, desc
@@ -130,6 +130,9 @@ def catalogPage():
                             items=items)
 
 
+
+
+
 @app.route("/catalog/<int:item_id>")
 @item_exists
 def itemPage(item, **kwargs):
@@ -171,7 +174,7 @@ def itemPage(item, **kwargs):
 @item_exists
 @list_exists
 @user_owns_list
-def addItemToList(user, item, **kwargs):
+def addItemToList(user, item, item_list, **kwargs):
     """
     Adds item to item list
 

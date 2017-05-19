@@ -19,12 +19,12 @@
 <div class="row item-extras">
     <div class="col-xs-4 text-center">
         {% if "username" in session %}
-        <form method="POST" action="{{url_for('addItemToList', item_id=sel_item.id)}}">
+        <form method="POST" id="addForm">
           <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
           <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Add item to list <span class="caret"></span></a>
           <ul class="dropdown-menu">
             {%for list in lists %}
-              <li><button type="submit" name="add" value="{{list.id}}">{{list.name}}</button></li>
+              <li><button type="submit" onclick='this.form.action="{{url_for("addItemToList", item_id=sel_item.id, list_id=list.id)}}"' name="add" value="{{list.id}}">{{list.name}}</button></li>
             {% endfor %}
           </ul>
         </form>
@@ -84,5 +84,7 @@
     </div>
   </div>
 </div>
+
+
 
 {% endblock content %}
