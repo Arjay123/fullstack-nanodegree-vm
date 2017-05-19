@@ -34,9 +34,7 @@ class User(Base):
     def serialize(self):
         return {
             'id': self.id,
-            'name': self.name,
-            'email': self.email,
-            'image': self.image
+            'name': self.name
         }
 
 """
