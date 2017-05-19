@@ -15,8 +15,9 @@ def user_logged_in(f):
             return redirect(url_for('loginPage'))
         user = session.query(User).filter_by(id=login_session["id"]).first()
         if not user:
-            abort(404)
             print "error, user not found"
+            abort(404)
+            
 
         kwargs["user"] = user
         return f(**kwargs)
@@ -32,6 +33,7 @@ def item_exists(f):
         item = session.query(Item).filter_by(id=kwargs["item_id"]).first()
         if not item:
             abort(404)
+            print "item doesn't exist"
         kwargs["item"] = item
         return f(**kwargs)
     return func

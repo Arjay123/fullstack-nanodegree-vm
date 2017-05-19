@@ -83,6 +83,31 @@ def get_categories():
     return [cat[0] for cat in categories]
 
 
+
+@app.route("/item/<int:item_id>.json")
+@item_exists
+def itemPageJSON(item, **kwargs):
+    """
+    Loads serialized JSON format of item
+    """
+    return jsonify(item=item.serialize)
+
+
+@app.route("/user/<int:user_id>.json")
+def userJSON(user_id):
+    user = session.query(User).filter_by(id=user_id).first()
+    user_items = session.query(Item).filter_by(user=user).all()
+    user_lists = session.query(ItemList).filter_by(user=user).all()
+    user_lists = [l.serialize for l in user_lists if l.public]
+    return jsonify(user=user.serialize, user_items=[i.serialize for i in user_items], user_lists=user_lists)
+
+
+@app.route("/lists/<int:list_id>.json")
+@list_exists
+def listJSON(item_list, **kwargs):
+    return jsonify(item_list.serialize)
+
+
 @app.route("/")
 def homepage():
     """
@@ -130,16 +155,10 @@ def catalogPage():
                             items=items)
 
 
-@app.route("/catalog/<int:item_id>.json")
-@item_exists
-def itemPageJSON(item, **kwargs):
-    """
-    Loads serialized JSON format of item
-    """
-    return jsonify(item=item.serialize)
 
 
-@app.route("/catalog/<int:item_id>")
+
+@app.route("/item/<int:item_id>")
 @item_exists
 def itemPage(item, **kwargs):
     """
@@ -203,7 +222,7 @@ def addItemToList(user, item, item_list, **kwargs):
 @item_exists
 @list_exists
 @user_owns_list
-def removeItemFromList(user, item, **kwargs):
+def removeItemFromList(user, item, item_list, **kwargs):
     """
     Remove item from item list
 
@@ -349,11 +368,11 @@ def createItemPage(user):
 
 
 
-@app.route("/catalog/<int:item_id>/edit", methods=["GET", "POST"])
+@app.route("/item/<int:item_id>/edit", methods=["GET", "POST"])
 @user_logged_in
 @item_exists
 @user_owns_item
-def editItemPage(item, **kwargs):
+def editItemPage(item, user, **kwargs):
     """
     Load page for editing item.
 
@@ -405,7 +424,7 @@ def editItemPage(item, **kwargs):
 
 
 
-@app.route("/catalog/<int:item_id>/delete", methods=["POST"])
+@app.route("/item/<int:item_id>/delete", methods=["POST"])
 @user_logged_in
 @item_exists
 @user_owns_item
@@ -427,7 +446,7 @@ def deleteItem(item, **kwargs):
     return redirect(url_for('userCreatedItems'))
 
 
-@app.route("/user/items")
+@app.route("/self/items")
 @user_logged_in
 def userCreatedItems(user):
     """
@@ -437,8 +456,18 @@ def userCreatedItems(user):
     return render_template("useritems.html", items=items)
 
 
-@app.route("/user/lists")
-@app.route("/user/lists/<int:list_id>")
+@app.route("/user/<int:user_id>")
+def userPage(user_id):
+    user = session.query(User).filter_by(id=user_id).first()
+    user_items = session.query(Item).filter_by(user=user).all()
+    return render_template("user.html")
+
+
+
+
+
+@app.route("/self/lists")
+@app.route("/self/lists/<int:list_id>")
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -462,7 +491,7 @@ def userCreatedLists(user, list_id=None, item_list=None):
                            sel_list=item_list)
 
 
-@app.route("/user/lists/create", methods=["POST"])
+@app.route("/lists/create", methods=["POST"])
 @user_logged_in 
 def createList(user):
     """
@@ -479,7 +508,7 @@ def createList(user):
     return redirect(url_for('userCreatedLists'))
 
 
-@app.route("/user/lists/edit/<int:list_id>", methods=["POST"])
+@app.route("/lists/edit/<int:list_id>", methods=["POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -502,7 +531,7 @@ def editList(user, item_list, **kwargs):
     return "Edit page"
 
 
-@app.route("/user/lists/delete/<int:list_id>", methods=["POST"])
+@app.route("/lists/delete/<int:list_id>", methods=["POST"])
 @user_logged_in
 @list_exists
 @user_owns_list

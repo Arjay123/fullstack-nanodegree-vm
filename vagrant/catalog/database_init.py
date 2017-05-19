@@ -88,7 +88,13 @@ item_list.items.append(item1)
 item_list.items.append(item2)
 item_list.items.append(item3)
 
-item_list2 = ItemList(name="List2", user=user2)
+item_list = ItemList(name="List1", user=user1, public=True)
+
+item_list.items.append(item6)
+item_list.items.append(item7)
+item_list.items.append(item8)
+
+item_list2 = ItemList(name="List2", user=user2, public=True)
 
 item_list2.items.append(item3)
 item_list2.items.append(item4)

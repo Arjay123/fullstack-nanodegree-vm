@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Table
@@ -80,7 +81,6 @@ class Item(Base):
             'category': self.category,
             'description': self.description,
             'views': self.views,
-            'user_id': self.user_id,
             'user': self.user.serialize
         }
 
@@ -105,6 +105,7 @@ class ItemList(Base):
     items = relationship("Item",
                          secondary=itemlist_table,
                          passive_deletes=True)
+    public = Column(Boolean, default=False)
 
 
     @property
@@ -112,14 +113,13 @@ class ItemList(Base):
         return{
             'id': self.id,
             'name': self.name,
-            'user_id': self.name,
             'user': self.user.serialize,
             'items': self.serialize_items
         }
 
     @property
     def serialize_items(self):
-        return [item.sierialize for item in self.items]
+        return [item.serialize for item in self.items]
 
 
 def create_db(uri="sqlite:///itemcatalog.db"):
@@ -129,3 +129,4 @@ def create_db(uri="sqlite:///itemcatalog.db"):
     engine = create_engine(uri)
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    print "okay"
