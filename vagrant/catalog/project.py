@@ -285,13 +285,13 @@ def moveItemBetweenLists(item, user, **kwargs):
 
 
 @app.route("/login")
-@user_logged_in
 def loginPage():
     """
     Login page
     """
-    if user:
-        return redirect(url_for('homepage'))
+    if USERNAME_KEY in login_session:
+        return redirect(url_for("homepage"))
+
     # generate state var for validation after login attemp
     state = hashlib.sha256(os.urandom(1024)).hexdigest()
     login_session['state'] = state
@@ -539,21 +539,26 @@ def editList(user, item_list, **kwargs):
         user - user editing the list
         item_list - list to be edited
     """
-    # TODO - Check name, get value of checkbox
-    # TODO - flash message success
-    # TODO - return errors if needed
     errors = {}
     if request.method == "POST":
-
         new_name = request.form['name']
-        new_public = request.form['public']
-        item_list.name = new_name
-        item_list.public = new_public
-        session.add(item_list)
-        session.commit()
+        new_public = request.form.get('public')
+        valid = True
+
+        if not new_name:
+            valid = False
+            errors["name"] = "Name cannot be empty"
+
+        if valid:
+            item_list.name = new_name
+            item_list.public = new_public == "on"
+            session.add(item_list)
+            session.commit()
+            flash("List changes have been saved", "success")
+        else:
+            flash("List changes not saved, see errors below", "danger")
 
 
-    
     return render_template("editlist.html", list=item_list, errors=errors)    
 
 
