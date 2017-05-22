@@ -41,6 +41,7 @@ LOCAL_ID = "id"
 FACEBOOK = "facebook"
 GOOGLE = "google"
 
+# TODO - Add image uploading for items
 
 @app.before_request
 def csrf_protect():
@@ -479,6 +480,10 @@ def userPage(user_id):
     return render_template("user.html", **params)
 
 
+@app.route("/selfPage")
+@user_logged_in
+def selfPage(user):
+    return redirect(url_for("userPage", user_id=user.id))
 
 
 

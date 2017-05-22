@@ -34,7 +34,7 @@
             </div>
             <div class="col-xs-8">
                 <h4>{{item.name}}</h4>
-                <h6>Created by {{item.user.name}}</h6>
+                <h6>Created by <a href="{{url_for('userPage', user_id=item.user.id)}}">{{item.user.name}}</a></h6>
                 <p>{{item.description}}</p>
                 <h6>{{item.views}} views</h6>
             </div>

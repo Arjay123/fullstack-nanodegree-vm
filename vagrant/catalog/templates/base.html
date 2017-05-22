@@ -28,11 +28,12 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
               {% if "username" not in session %}
-                <li class="nav-link"><a href="{{url_for('loginPage')}}">Login</a>
+                <li class="nav-link"><a href="{{url_for('loginPage')}}">Login</a></li>
               {% else %}
-                <li class="nav-link"><a href="{{url_for('userCreatedItems')}}">Manage Items</a>
-                <li class="nav-link"><a href="{{url_for('userCreatedLists')}}">Your Item Lists</a>
-                <li class="nav-link"><a href="{{url_for('logout')}}">Logout</a>
+                <li class="nav-link"><a href="{{url_for('selfPage')}}">Your Page</a></li>
+                <li class="nav-link"><a href="{{url_for('userCreatedItems')}}">Manage Items</a></li>
+                <li class="nav-link"><a href="{{url_for('userCreatedLists')}}">Your Item Lists</a></li>
+                <li class="nav-link"><a href="{{url_for('logout')}}">Logout</a></li>
               {% endif %}
             </ul>
           </div><!--/.nav-collapse -->

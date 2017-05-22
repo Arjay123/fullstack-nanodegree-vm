@@ -11,7 +11,7 @@
     </div>
     <div class="col-xs-8">
         <h4>{{sel_item.name}}</h4>
-        <h6>Created by {{sel_item.user.name}}</h6>
+        <h6>Created by <a href="{{url_for('userPage', user_id=sel_item.user.id)}}">{{sel_item.user.name}}</a></h6>
         <p>{{sel_item.description}}</p>
         <h6>{{sel_item.views}} views</h6>
     </div>
