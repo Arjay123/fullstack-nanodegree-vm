@@ -33,11 +33,11 @@
     </div>
 
     <div class="col-xs-10">
-      <a data-toggle="modal" data-target="#editListModal">Edit/Delete list</a>
         {% if sel_list and sel_list.items|length > 0 %}
           <div class="row list-hdr row-eq-height">
             <div class="col-xs-6">
               <h3>Items in {{sel_list.name}}</h3>
+              <a data-toggle="modal" data-target="#editListModal">Edit/Delete list</a>
             </div>
             
           </div>
@@ -75,6 +75,7 @@
           {% endfor %}
         {% else %}
         <h4>This list is empty! Any items added to this list will show up here.</h4>
+        <a data-toggle="modal" data-target="#editListModal">Edit/Delete list</a>
         {% endif %}
             
     </div>
