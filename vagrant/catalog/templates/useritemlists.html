@@ -37,7 +37,7 @@
           <div class="row list-hdr row-eq-height">
             <div class="col-xs-6">
               <h3>Items in {{sel_list.name}}</h3>
-              <a data-toggle="modal" data-target="#editListModal">Edit/Delete list</a>
+              <a data-toggle="modal" href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
             </div>
             
           </div>

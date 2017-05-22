@@ -594,6 +594,7 @@ def success():
     # if no account, create one
     if not found:
         print "created new user"
+
         new_user = User(name=login_session[USERNAME_KEY],
                         email=login_session[EMAIL_KEY],
                         image=login_session[PICTURE_KEY])
