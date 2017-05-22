@@ -1,6 +1,6 @@
-{% macro item_form(name, category, description, errors, categories) %}
+{% macro item_form(name, category, description, image, errors, categories) %}
 
-<form class="form-horizontal" method="POST">
+<form class="form-horizontal" enctype="multipart/form-data" method="POST">
     <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
     <div class="form-group">
         <label for="item-name-input" class="col-xs-2">Name</label>
@@ -27,6 +27,20 @@
             <span class="form-error">{{errors['description']}}</span>
         </div>
     </div>
+    <div class="form-group">
+        <label for="item-image-input" class="col-xs-2">Image Upload</label>
+        <div class="col-xs-4">
+            <input type="file" name="image">
+        </div>
+    </div>
+    {% if image %}
+    <div class="form-group">
+        <label for="item-image-preview" class="col-xs-2">Current Image</label>
+        <div class="col-xs-10">
+            <img style="max-width: 200px;" src="{{url_for('image_file', filename=image)}}">
+        </div>
+    </div>
+    {% endif %}
     <div class="form-group">
         <div class="col-xs-10 col-xs-offset-2">
             <button type="submit" class="btn btn-default">Submit</button>

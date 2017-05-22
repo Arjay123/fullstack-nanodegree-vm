@@ -14,15 +14,23 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import json
 
-from flask import make_response, abort
+from flask import make_response, abort, send_from_directory
 import requests
 
 
 from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item, item_in_list
 from database import session
 
+from werkzeug.utils import secure_filename
+
+
+
+
 
 app = Flask(__name__)
+UPLOAD_PATH = "static/images"
+EXTENSIONS = ["png", "jpg", "jpeg"]
+app.config["UPLOAD_PATH"] = UPLOAD_PATH
 app.secret_key = "sosecret"
 session.rollback()
 
@@ -41,7 +49,9 @@ LOCAL_ID = "id"
 FACEBOOK = "facebook"
 GOOGLE = "google"
 
-# TODO - Add image uploading for items
+
+
+
 
 @app.before_request
 def csrf_protect():
@@ -83,6 +93,10 @@ def get_categories():
     categories = session.query(Item.category).group_by(Item.category).all()
     return [cat[0] for cat in categories]
 
+
+@app.route("/static/images/<filename>")
+def image_file(filename):
+    return send_from_directory(app.config["UPLOAD_PATH"], filename)
 
 
 @app.route("/item/<int:item_id>.json")
@@ -156,6 +170,7 @@ def catalogPage():
                             category=category,
                             categories=categories,
                             items=items)
+
 
 
 
@@ -322,6 +337,11 @@ def logout(user):
     return redirect(url_for('homepage'))
 
 
+def allowedFile(filename):
+    if "." in filename:
+        return filename.split(".")[-1] in EXTENSIONS
+
+
 
 @app.route("/create", methods=['GET', 'POST'])
 @user_logged_in
@@ -336,6 +356,7 @@ def createItemPage(user):
         name = request.form['name']
         category = request.form['category']
         description = request.form['description']
+        image = request.files.get("image")
 
         params = {"name": name,
                   "category": category,
@@ -355,11 +376,22 @@ def createItemPage(user):
             errors['description'] = "Item description is required"
 
         if form_valid:
+
+            #attempt save image
+            if image:
+                filename = secure_filename(image.filename)
+                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                image.save(fullpath)
+
+
             new_item = Item(name=name,
                             category=category,
                             description=description,
                             user=user,
                             views=0)
+            if filename:
+                new_item.image = filename
+
             session.add(new_item)
             session.commit()
             flash("Item successfully created", "success")
@@ -397,6 +429,7 @@ def editItemPage(item, user, **kwargs):
         name = request.form['name']
         category = request.form['category']
         description = request.form['description']
+        image = request.files.get("image")
 
 
         form_valid = True
@@ -416,6 +449,16 @@ def editItemPage(item, user, **kwargs):
             item.name = name
             item.category = category
             item.description = description
+
+            if image:
+                oldfile = item.image
+                os.remove(os.path.join(app.config["UPLOAD_PATH"], oldfile))
+                filename = secure_filename(image.filename)
+                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                image.save(fullpath)
+                if filename:
+                    item.image = filename
+
             session.add(item)
             session.commit()
             flash("Item edits have been saved", "success")
@@ -444,7 +487,9 @@ def deleteItem(item, **kwargs):
     #TODO - get logged in user
     #TODO - add message flashing
     #TODO - redirect to user's items list page
-
+    if item.image:
+        os.remove(os.path.join(app.config["UPLOAD_PATH"], item.image))
+        
     session.delete(item)
     session.commit()
 
