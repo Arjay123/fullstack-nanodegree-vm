@@ -4,6 +4,19 @@ from database_setup import Item, User, ItemList, Base, create_db
 from database import session
 
 
+def user_exists(f):
+    @wraps(f)
+    def func(**kwargs):
+        user_id = kwargs["user_id"]
+        user = session.query(User).filter_by(id=user_id).first()
+
+        if not user:
+            print "User not found"
+            abort(404)
+        return f(user)
+    return func
+
+
 def user_logged_in(f):
     """
     Checks if user is logged in. If not logged in, redirect to login page.

@@ -18,7 +18,7 @@ from flask import make_response, abort, send_from_directory
 import requests
 
 
-from decorators import user_logged_in, item_exists, list_exists, user_owns_list, user_owns_item, item_in_list
+from decorators import user_logged_in, item_exists, list_exists, user_exists, user_owns_list, user_owns_item, item_in_list
 from database import session
 
 from werkzeug.utils import secure_filename
@@ -109,10 +109,8 @@ def itemPageJSON(item, **kwargs):
 
 
 @app.route("/user/<int:user_id>.json")
-def userJSON(user_id):
-
-    # TODO - create user exists decorator
-    user = session.query(User).filter_by(id=user_id).first()
+@user_exists
+def userJSON(user):
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
     user_lists = [l.serialize for l in user_lists if l.public]
@@ -482,10 +480,6 @@ def deleteItem(item, **kwargs):
 
     item - item to be deleted
     """
-
-    #TODO - get logged in user
-    #TODO - add message flashing
-    #TODO - redirect to user's items list page
     if item.image:
         os.remove(os.path.join(app.config["UPLOAD_PATH"], item.image))
 
@@ -507,10 +501,9 @@ def userCreatedItems(user):
 
 
 @app.route("/user/<int:user_id>")
-def userPage(user_id):
+@user_exists
+def userPage(user):
 
-    # TODO - create user exists decorator
-    user = session.query(User).filter_by(id=user_id).first()
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
     user_lists = [l.serialize for l in user_lists if l.public]
@@ -565,13 +558,16 @@ def createList(user):
     Args:
     user - user that is creating the list
     """
-
-    # TODO - Valid name
-    # TODO - return errors if necessary
     name = request.form['name']
-    new_list = ItemList(name=name, user=user)
-    session.add(new_list)
-    session.commit()
+
+    if name:
+        new_list = ItemList(name=name, user=user)
+        session.add(new_list)
+        session.commit()
+        flash("List created", "success")
+    else:
+        flash("List not created, list name must not be empty", "danger")
+
 
     return redirect(url_for('userCreatedLists'))
 
