@@ -16,19 +16,19 @@
           <!-- Wrapper for slides -->
           <div class="carousel-inner" style="width: 100%;" role="listbox">
             <div class="item active">
-              <img class="img-responsive center-block" src="http://placehold.it/1140x300" alt="Photo 1">
+              <img class="img-responsive center-block" src="{{url_for('image_file', filename='bannerdefault.png')}}"  alt="Banner 1">
             </div>
 
             <div class="item">
-              <img class="img-responsive center-block" src="http://placehold.it/1140x300" alt="Photo 2">
+              <img class="img-responsive center-block" src="{{url_for('image_file', filename='bannerdefault.png')}}"  alt="Banner 2">
             </div>
 
             <div class="item">
-              <img class="img-responsive center-block" src="http://placehold.it/1140x300" alt="Photo 3">
+              <img class="img-responsive center-block" src="{{url_for('image_file', filename='bannerdefault.png')}}"  alt="Banner 3">
             </div>
 
             <div class="item">
-              <img class="img-responsive center-block" src="http://placehold.it/1140x300" alt="Photo 4">
+              <img class="img-responsive center-block" src="{{url_for('image_file', filename='bannerdefault.png')}}"  alt="Banner 4">
             </div>
           </div>
 
@@ -58,7 +58,7 @@
             <div class="col-xs-12 col-sm-6 col-md-4 item-container">
                 <div class="row item-box eq-height-xs">
                     <div class="col-xs-4 col-sm-12 item-image-container">
-                        <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
+                        <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
                     </div>
                     <div class="col-xs-8 col-sm-12">
                         <h5>{{item.name}}</h5>
