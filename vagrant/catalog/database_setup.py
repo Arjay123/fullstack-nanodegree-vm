@@ -71,7 +71,7 @@ class Item(Base):
     views = Column(Integer, default=0)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship(User)
-    image = Column(String(250), default="")
+    image = Column(String(250), default="noimage.png")
 
 
 

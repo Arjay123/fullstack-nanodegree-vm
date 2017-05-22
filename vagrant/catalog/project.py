@@ -377,20 +377,19 @@ def createItemPage(user):
 
         if form_valid:
 
-            #attempt save image
-            if image:
-                filename = secure_filename(image.filename)
-                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
-                image.save(fullpath)
-
-
             new_item = Item(name=name,
                             category=category,
                             description=description,
                             user=user,
                             views=0)
-            if filename:
-                new_item.image = filename
+
+            #attempt save image
+            if image:
+                filename = secure_filename(image.filename)
+                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                image.save(fullpath)
+                if filename:
+                    new_item.image = filename
 
             session.add(new_item)
             session.commit()
@@ -489,7 +488,7 @@ def deleteItem(item, **kwargs):
     #TODO - redirect to user's items list page
     if item.image:
         os.remove(os.path.join(app.config["UPLOAD_PATH"], item.image))
-        
+
     session.delete(item)
     session.commit()
 
