@@ -22,8 +22,6 @@ class User(Base):
     email - Email of user, must be unique but can be empty
     image - Link to image of user from third-party auth website (i.e. google)
     """
-
-    # TODO - implement image
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
