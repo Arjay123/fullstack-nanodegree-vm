@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% from "macros.html" import item_preview, isotope %}
 
 
 
@@ -47,20 +47,7 @@
         <div class="row">
 
         {% for item in items %}
-        <div class="col-xs-12 col-sm-6 col-md-4 item-container">
-            <div class="row item-box eq-height-xs">
-                <div class="col-xs-4 col-sm-12 item-image-container">
-                    <a href="{{url_for('itemPage', item_id=item.id)}}">
-                        <img class="img-responsive item-img center-block" src="{{url_for('image_file', filename=item.image)}}">
-                    </a>
-                </div>
-                <div class="col-xs-8 col-sm-12">
-                    <h5>{{item.name}}</h5>
-                    <p>{{item.description}}</p>
-                    <h6>{{item.views}} views</h6>
-                </div>
-            </div>
-        </div>
+            {{ item_preview(item)}}
         {% endfor %}
 
             
@@ -87,6 +74,10 @@
   </div>
 </div>
 
-
-
 {% endblock content %}
+
+{% block scripts %}
+
+{{isotope()}}
+
+{% endblock %}
