@@ -58,7 +58,7 @@
             <div class="col-xs-12 col-sm-6 col-md-4 item-container">
                 <div class="row item-box eq-height-xs">
                     <div class="col-xs-4 col-sm-12 item-image-container">
-                        <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
+                        <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="item-preview-img center-block img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
                     </div>
                     <div class="col-xs-8 col-sm-12">
                         <h5>{{item.name}}</h5>
