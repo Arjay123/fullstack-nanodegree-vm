@@ -1,3 +1,10 @@
+/* dark blue: #232f3e */
+
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+}
+
 .navbar-default,
 .navbar-toggle {
     background-color: white;
@@ -8,21 +15,26 @@
 }
 
 .navbar-toggle{
-    bottom: 35px;
+    /*bottom: 35px;*/
+    /*margin-top: 0;*/
 }
 
 #navbar-min {
     border-color: transparent;
 }
 
-#navbar {
-    border-top: 3px solid black;
-    border-bottom: 3px solid black;
-}
 
 .logo {
     margin-top: 10px;
     margin-bottom: 10px;
+}
+
+.logo-link {
+    color: black;
+}
+
+.mobile-logo {
+    padding-left: 30px;
 }
 
 .logo-img {
@@ -30,9 +42,13 @@
     max-width: 100px;
 }
 
+.content {
+    margin-top: 20px;
+}
+
 .item-img {
-    max-height: 200px;
-    max-width: 200px;
+    max-height: 100px;
+    max-width: 100px;
 }
 
 .nav-link,
@@ -89,12 +105,25 @@
     display:         flex;
 }
 
-@media screen and (max-width: 768px){
+@media screen and (max-width: 767px){
     .eq-height-xs{
         display: -webkit-box;
         display: -webkit-flex;
         display: -ms-flexbox;
         display:         flex;
+    }
+
+    .navbar-default {
+        border-bottom: 3px solid #D3D3D3;
+    }
+
+    
+}
+
+@media screen and (min-width:768px){
+    #navbar {
+        border-top: 3px solid black;
+        border-bottom: 3px solid black;
     }
 }
 

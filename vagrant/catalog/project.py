@@ -155,7 +155,6 @@ def catalogPage():
     categories = get_categories()
     if category:
         items = session.query(Item).filter_by(category=category)
-        categories.remove(category)
     else:
         items = session.query(Item).filter(Item.views>100)
 
