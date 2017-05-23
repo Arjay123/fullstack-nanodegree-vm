@@ -51,26 +51,41 @@
 </div>
 </div>
 <div class="row featured-items">
-    <div class="col-xs-12">
-        <div class="row">
-
-            {% for item in items %}
-            <div class="col-xs-12 col-sm-6 col-md-4 item-container">
-                <div class="row item-box eq-height-xs">
-                    <div class="col-xs-4 col-sm-12 item-image-container">
-                        <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="item-preview-img center-block img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
-                    </div>
-                    <div class="col-xs-8 col-sm-12">
-                        <h5>{{item.name}}</h5>
-                        <p>{{item.description}}</p>
-                        <h6>{{item.views}} views</h6>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            
-        </div>
-    </div>
+          {% for item in items %}
+          <div class="col-xs-12 col-sm-6 col-md-4 item-container">
+              <div class="row item-box eq-height-xs">
+                  <div class="col-xs-4 col-sm-12 item-image-container">
+                      <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="item-img center-block img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
+                  </div>
+                  <div class="col-xs-8 col-sm-12">
+                      <h5>{{item.name}}</h5>
+                      <p>{{item.description}}</p>
+                      <h6>{{item.views}} views</h6>
+                  </div>
+              </div>
+          </div>
+          {% endfor %}
 </div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+
+<script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.js"></script>
+<script src="https://npmcdn.com/imagesloaded@4.1/imagesloaded.pkgd.min.js"></script>
+
+<script>
+
+var $grid = $(".featured-items").imagesLoaded(function() {
+  // init Masonry after all images have loaded
+  $grid.isotope({
+    itemSelector: ".item-container",
+    layoutMode: "fitRows"
+  });
+});
+</script>
+
 
 {% endblock %}
