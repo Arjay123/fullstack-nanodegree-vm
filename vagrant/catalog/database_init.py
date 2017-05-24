@@ -1,7 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database_setup import Item, Base, User, ItemList, create_db
+from database_setup import Base
+from database_setup import create_db
+from database_setup import Item
+from database_setup import ItemList
+from database_setup import User
+
 
 create_db()
 engine = create_engine("sqlite:///itemcatalog.db")
@@ -25,8 +30,8 @@ session.commit()
 # add items
 item1 = Item(name="Nintendo Switch",
              category="Video Games",
-             description="Introducing Nintendo Switch, the new home video game"
-             " system from Nintendo. In addition to providing single and"
+             description="Introducing Nintendo Switch, the new home video "
+             "game system from Nintendo. In addition to providing single and"
              " multiplayer thrills at home, the Nintendo Switch system can"
              " be taken on the go so players can enjoy a full home console"
              " experience anytime, anywhere. The mobility of a handheld is"

@@ -1,11 +1,16 @@
 import unittest
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
-from database_setup import Item, User, ItemList, Base, create_db
+from database_setup import Base
+from database_setup import create_db
+from database_setup import Item
+from database_setup import ItemList
+from database_setup import User
+
 
 db_uri = "sqlite:///itemcatalog_test.db"
 create_db(db_uri)
@@ -21,17 +26,15 @@ class TestCatalogDB(unittest.TestCase):
         db_init()
         self.user = session.query(User).filter_by(id=1).one()
 
-
     def tearDown(self):
         session.rollback()
-
 
     def test_ItemCreateShouldPass(self):
         item_id = 10
         name = "Name"
-        category="Category"
-        description="Description"
-        views=0
+        category = "Category"
+        description = "Description"
+        views = 0
 
         item = Item(name=name,
                     category=category,
@@ -47,13 +50,12 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(views, item.views)
         self.assertEqual(self.user, item.user)
 
-
     def test_ItemCreateShouldFail_NoName(self):
         item_id = 10
         name = None
-        category="Category"
-        description="Description"
-        views=0
+        category = "Category"
+        description = "Description"
+        views = 0
 
         item = Item(name=name,
                     category=category,
@@ -62,14 +64,13 @@ class TestCatalogDB(unittest.TestCase):
 
         session.add(item)
         self.assertRaises(IntegrityError, session.commit)
-
 
     def test_ItemCreateShouldFail_NoCategory(self):
         item_id = 10
         name = "Name"
-        category=None
-        description="Description"
-        views=0
+        category = None
+        description = "Description"
+        views = 0
 
         item = Item(name=name,
                     category=category,
@@ -78,14 +79,13 @@ class TestCatalogDB(unittest.TestCase):
 
         session.add(item)
         self.assertRaises(IntegrityError, session.commit)
-
 
     def test_ItemCreateShouldFail_NoDesc(self):
         item_id = 10
         name = "Name"
-        category="Category"
-        description=None
-        views=0
+        category = "Category"
+        description = None
+        views = 0
 
         item = Item(name=name,
                     category=category,
@@ -95,51 +95,45 @@ class TestCatalogDB(unittest.TestCase):
         session.add(item)
         self.assertRaises(IntegrityError, session.commit)
 
-
     def test_ItemCreateShouldFail_NoUser(self):
         item_id = 10
         name = "Name"
-        category="Category"
-        description="Description"
+        category = "Category"
+        description = "Description"
 
         item = Item(name=name,
-            category=category,
-            description=description,
-            user=None)
+                    category=category,
+                    description=description,
+                    user=None)
 
         session.add(item)
         self.assertRaises(IntegrityError, session.commit)
 
-
     def test_ItemReadShouldPass_ID(self):
-        item_id=1
+        item_id = 1
 
         found = session.query(Item).filter_by(id=item_id).one()
 
         self.assertEqual(item_id, found.id)
 
-
     def test_ItemReadShouldPass_Name(self):
-        item_name="Nintendo Switch"
+        item_name = "Nintendo Switch"
 
         found = session.query(Item).filter_by(name=item_name).one()
 
         self.assertEqual(item_name, found.name)
 
-
     def test_ItemReadShouldFail_NoID(self):
         item_id = 123
-        
-        self.assertRaises(NoResultFound, 
-            session.query(Item).filter_by(id=item_id).one)      
 
+        self.assertRaises(NoResultFound,
+                          session.query(Item).filter_by(id=item_id).one)
 
     def test_ItemReadShouldFail_NoName(self):
         item_name = "NoName"
-        
-        self.assertRaises(NoResultFound, 
-            session.query(Item).filter_by(name=item_name).one)  
 
+        self.assertRaises(NoResultFound,
+                          session.query(Item).filter_by(name=item_name).one)
 
     def test_ItemUpdateShouldPass(self):
         item_id = 1
@@ -163,7 +157,6 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(new_category, item.category)
         self.assertEqual(new_desc, item.description)
 
-
     def test_ItemDeleteShouldPass(self):
         item_id = 1
 
@@ -173,16 +166,14 @@ class TestCatalogDB(unittest.TestCase):
         session.commit()
 
         self.assertRaises(NoResultFound,
-            session.query(Item).filter_by(id=item_id).one)
-
+                          session.query(Item).filter_by(id=item_id).one)
 
     def test_UserCreateShouldPass(self):
 
-        user_name="Kyle Kyle"
-        user_email="kyle@email.com"
+        user_name = "Kyle Kyle"
+        user_email = "kyle@email.com"
         user_id = 3
         user = User(name=user_name, email=user_email)
-        
 
         session.add(user)
         session.commit()
@@ -191,11 +182,10 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(user_name, user.name)
         self.assertEqual(user_email, user.email)
 
-
     def test_UserCreateShouldPass_NullEmails(self):
 
         user1 = User(name="User1")
-        user2 =User(name="User2")
+        user2 = User(name="User2")
 
         session.add(user1)
         session.add(user2)
@@ -204,13 +194,11 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(3, user1.id)
         self.assertEqual(4, user2.id)
 
-
     def test_UserCreateShouldFail_NoName(self):
         user = User(name=None)
 
         session.add(user)
         self.assertRaises(IntegrityError, session.commit)
-
 
     def test_UserCreateShouldFail_SameEmail(self):
         user = User(name="Username", email="arjay@email.com")
@@ -218,13 +206,11 @@ class TestCatalogDB(unittest.TestCase):
         session.add(user)
         self.assertRaises(IntegrityError, session.commit)
 
-
     def test_UserReadShouldPass_ID(self):
         user_id = 1
 
         user = session.query(User).filter_by(id=user_id).one()
         self.assertEqual(user_id, user.id)
-
 
     def test_UserReadShouldPass_Email(self):
         user_email = "arjay@email.com"
@@ -232,20 +218,17 @@ class TestCatalogDB(unittest.TestCase):
         user = session.query(User).filter_by(email=user_email).one()
         self.assertEqual(user_email, user.email)
 
-
     def test_UserReadShouldFail_NoID(self):
         user_id = 3
-        
-        self.assertRaises(NoResultFound,
-            session.query(User).filter_by(id=user_id).one)
 
+        self.assertRaises(NoResultFound,
+                          session.query(User).filter_by(id=user_id).one)
 
     def test_UserReadShouldFail_NoEmail(self):
         user_email = "no@email.com"
 
         self.assertRaises(NoResultFound,
-            session.query(User).filter_by(email=user_email).one)
-
+                          session.query(User).filter_by(email=user_email).one)
 
     def test_UserUpdateShouldPass(self):
         user_id = 1
@@ -266,18 +249,16 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(new_name, user.name)
         self.assertEqual(new_email, user.email)
 
-
     def test_UserDeleteShouldPass(self):
         user_id = 1
 
         user = session.query(User).filter_by(id=user_id).one()
-        
+
         session.delete(user)
         session.commit()
 
         self.assertRaises(NoResultFound,
-            session.query(User).filter_by(id=user_id).one)
-
+                          session.query(User).filter_by(id=user_id).one)
 
     def test_ItemListCreateShouldPass(self):
         item_list = ItemList(name="List", user=self.user)
@@ -288,13 +269,11 @@ class TestCatalogDB(unittest.TestCase):
         self.assertEqual(3, item_list.id)
         self.assertEqual("List", item_list.name)
 
-
     def test_ItemListCreateShouldFail_NoName(self):
         item_list = ItemList(name=None, user=self.user)
 
         session.add(item_list)
         self.assertRaises(IntegrityError, session.commit)
-
 
     def test_ItemListCreateShouldFail_NoUser(self):
         item_list = ItemList(name="Name", user=None)
@@ -302,17 +281,14 @@ class TestCatalogDB(unittest.TestCase):
         session.add(item_list)
         self.assertRaises(IntegrityError, session.commit)
 
-
     def test_ItemListReadShouldPass(self):
         item_list = session.query(ItemList).filter_by(id=1).one()
 
         self.assertEqual(1, item_list.id)
 
-
     def test_ItemListReadShouldFail_ID(self):
         self.assertRaises(NoResultFound,
-            session.query(ItemList).filter_by(id=123).one)
-
+                          session.query(ItemList).filter_by(id=123).one)
 
     def test_ItemListUpdateShouldPass(self):
         item_list = session.query(ItemList).filter_by(id=1).one()
@@ -327,18 +303,14 @@ class TestCatalogDB(unittest.TestCase):
         item_list = session.query(ItemList).filter_by(id=1).one()
         self.assertEqual(orig_length+1, len(item_list.items))
 
-
     def test_ItemListDeleteShouldPass(self):
         item_list = session.query(ItemList).filter_by(id=1).one()
 
         session.delete(item_list)
         session.commit()
 
-        self.assertRaises(NoResultFound, 
-            session.query(ItemList).filter_by(id=1).one)
-
-        
-
+        self.assertRaises(NoResultFound,
+                          session.query(ItemList).filter_by(id=1).one)
 
 
 def db_init():
@@ -411,8 +383,6 @@ def db_init():
                  user=user1,
                  views=190)
 
-
-
     session.add_all([item1, item2, item3, item4, item5, item6, item7, item8,
                      item9])
     session.commit()
@@ -431,7 +401,6 @@ def db_init():
 
     session.add_all([item_list, item_list2])
     session.commit()
-
 
 
 if __name__ == '__main__':

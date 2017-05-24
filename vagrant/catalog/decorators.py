@@ -1,7 +1,15 @@
+from flask import abort
+from flask import redirect
+from flask import session as login_session
+from flask import url_for
 from functools import wraps
-from flask import session as login_session, redirect, url_for, abort
-from database_setup import Item, User, ItemList, Base, create_db
+
 from database import session
+from database_setup import Base
+from database_setup import create_db
+from database_setup import Item
+from database_setup import ItemList
+from database_setup import User
 
 
 def user_exists(f):

@@ -29,7 +29,6 @@ class User(Base):
     email = Column(String(250), nullable=True, unique=True)
     image = Column(String(250))
 
-
     @property
     def serialize(self):
         return {
@@ -71,9 +70,6 @@ class Item(Base):
     user = relationship(User)
     image = Column(String(250), default="noimage.png")
 
-
-
-
     @property
     def serialize(self):
         return {
@@ -107,7 +103,6 @@ class ItemList(Base):
                          secondary=itemlist_table,
                          passive_deletes=True)
     public = Column(Boolean, default=False)
-
 
     @property
     def serialize(self):
