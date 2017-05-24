@@ -1,43 +1,56 @@
-import random
 import hashlib
+import json
 import os
+import random
+import requests
 import string
 
-from flask import Flask, render_template, url_for, request, redirect, flash, jsonify
+from flask import abort
+from flask import flash
+from flask import Flask
+from flask import jsonify
+from flask import make_response
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import send_from_directory
 from flask import session as login_session
+from flask import url_for
+from sqlalchemy import desc
+from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import exists, desc
-
-from database_setup import Item, User, ItemList, Base, create_db
-
 from oauth2client import client
-from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
-import json
-
-from flask import make_response, abort, send_from_directory
-import requests
-
-
-from decorators import user_logged_in, item_exists, list_exists, user_exists, user_owns_list, user_owns_item, item_in_list
-from database import session
-
+from oauth2client.client import flow_from_clientsecrets
 from werkzeug.utils import secure_filename
 
-
-
+from database import session
+from database_setup import Base
+from database_setup import create_db
+from database_setup import Item
+from database_setup import ItemList
+from database_setup import User
+from decorators import item_exists
+from decorators import item_in_list
+from decorators import list_exists
+from decorators import user_exists
+from decorators import user_logged_in
+from decorators import user_owns_item
+from decorators import user_owns_list
 
 
 app = Flask(__name__)
 UPLOAD_PATH = "static/images"
 EXTENSIONS = ["png", "jpg", "jpeg"]
-app.config["UPLOAD_PATH"] = UPLOAD_PATH
-app.secret_key = "sosecret"
-session.rollback()
 
-CLIENT_ID = json.loads(open('client_secrets.json','r').read())['web']['client_id']
-FB_CLIENT_ID = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_id"]
-FB_CLIENT_SECRET = json.loads(open("fb_client_secrets.json", "r").read())["web"]["client_secret"]
+CLIENT_ID = json.loads(
+    open("client_secrets.json", "r").read())["web"]["client_id"]
+
+FB_CLIENT_ID = json.loads(
+    open("fb_client_secrets.json", "r").read())["web"]["client_id"]
+
+FB_CLIENT_SECRET = json.loads(
+    open("fb_client_secrets.json", "r").read())["web"]["client_secret"]
 
 USERNAME_KEY = "username"
 PICTURE_KEY = "picture"
@@ -49,6 +62,7 @@ LOCAL_ID = "id"
 
 FACEBOOK = "facebook"
 GOOGLE = "google"
+
 DEFAULT_ITEM_IMAGE = "noimage.png"
 
 CATEGORIES = ["Art Supplies",
@@ -60,55 +74,8 @@ CATEGORIES = ["Art Supplies",
               "Video Games",
               "Sports"]
 
-@app.errorhandler(404)
-def resource_not_found(e):
-    """
-    Error handler for 404 errors (i.e. item/item_list/user not found, page
-    doesn't exist)
-    """
-    return render_template("error.html",
-                           error=404,
-                           error_msg="Resource not found")
-
-@app.errorhandler(403)
-def resource_not_owned(e):
-    """
-    Error handler for 403 errors (i.e. user trying to edit/delete a resource
-    that they don't own)
-    """
-    return render_template("error.html",
-                           error=403,
-                           error_msg="You cannot edit/delete a resource if "
-                           "you are not the owner")
-
-@app.errorhandler(401)
-def resource_not_owned(e):
-    """
-    Error handler for 401 errors (i.e. user attempting to access page that
-    requires login)
-    """
-    return render_template("error.html",
-                           error=401,
-                           error_msg="You must be logged in to view that "
-                           "page")
-
-@app.before_request
-def csrf_protect():
-    """
-    Check to see if POST request contains same csrf token as the one passed
-    in when the form was requested. 
-
-    Exception for third party routes b/c they are already protected by
-    state tokens.
-
-    Part of this code is from the url: http://flask.pocoo.org/snippets/3/
-    by Dan Jacob and has been provided free of use.
-    """
-    if request.method == "POST" and "connect" not in request.path:
-        token = login_session.pop('_csrf_token', None)
-        print token, request.path
-        if not token or token != request.form.get('_csrf_token'):
-            abort(403)
+app.config["UPLOAD_PATH"] = UPLOAD_PATH
+app.secret_key = "sosecret"
 
 
 def generate_csrf_token():
@@ -124,16 +91,58 @@ def generate_csrf_token():
 app.jinja_env.globals["csrf_token"] = generate_csrf_token
 
 
-def generate_filename(ext):
-    current_images = [fn for fn in os.listdir(app.config["UPLOAD_PATH"])]
-    newfilename = ''.join(random.choice(string.ascii_letters 
-        + string.digits) for _ in range(16)) + "." + ext
-    while newfilename in current_images:
-        newfilename = ''.join(random.choice(string.ascii_letters 
-        + string.digits) for _ in range(16)) + "." + ext
-    return newfilename
+@app.before_request
+def csrf_protect():
+    """
+    Check to see if POST request contains same csrf token as the one passed
+    in when the form was requested.
+
+    Exception for third party routes b/c they are already protected by
+    state tokens.
+
+    Part of this code is from the url: http://flask.pocoo.org/snippets/3/
+    by Dan Jacob and has been provided free of use.
+    """
+    if request.method == "POST" and "connect" not in request.path:
+        token = login_session.pop("_csrf_token", None)
+        print token, request.path
+        if not token or token != request.form.get("_csrf_token"):
+            abort(403)
 
 
+@app.errorhandler(404)
+def resource_not_found(e):
+    """
+    Error handler for 404 errors (i.e. item/item_list/user not found, page
+    doesn't exist)
+    """
+    return render_template("error.html",
+                           error=404,
+                           error_msg="Resource not found")
+
+
+@app.errorhandler(403)
+def resource_not_owned(e):
+    """
+    Error handler for 403 errors (i.e. user trying to edit/delete a resource
+    that they don't own)
+    """
+    return render_template("error.html",
+                           error=403,
+                           error_msg="You cannot edit/delete a resource if "
+                           "you are not the owner")
+
+
+@app.errorhandler(401)
+def resource_not_owned(e):
+    """
+    Error handler for 401 errors (i.e. user attempting to access page that
+    requires login)
+    """
+    return render_template("error.html",
+                           error=401,
+                           error_msg="You must be logged in to view that "
+                           "page")
 
 
 @app.route("/images/<filename>")
@@ -162,7 +171,9 @@ def userJSON(user):
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
     user_lists = [l.serialize for l in user_lists if l.public]
-    return jsonify(user=user.serialize, user_items=[i.serialize for i in user_items], user_lists=user_lists)
+    return jsonify(user=user.serialize,
+                   user_items=[i.serialize for i in user_items],
+                   user_lists=user_lists)
 
 
 @app.route("/list/<int:list_id>.json")
@@ -190,14 +201,14 @@ def homepage():
 def catalogPage():
     """
     Loads catalog page
-    
+
     If order specified, show items in that order. A-Z by default
     If category selected, show items in that category. Items w/ views over
     100 by default
     """
 
-    order = request.args.get('order')
-    category = request.args.get('category')
+    order = request.args.get("order")
+    category = request.args.get("category")
 
     if not order:
         order = "name"
@@ -206,11 +217,10 @@ def catalogPage():
     if "views" in order:
         order_param = Item.views
 
-
     if category:
         items = session.query(Item).filter_by(category=category)
     else:
-        items = session.query(Item).filter(Item.views>100)
+        items = session.query(Item).filter(Item.views > 100)
 
     if "desc" in order:
         items = items.order_by(desc(order_param))
@@ -218,9 +228,9 @@ def catalogPage():
         items = items.order_by(order_param)
 
     return render_template("catalog.html",
-                            category=category,
-                            categories=CATEGORIES,
-                            items=items)
+                           category=category,
+                           categories=CATEGORIES,
+                           items=items)
 
 
 @app.route("/item/<int:item_id>")
@@ -228,7 +238,7 @@ def catalogPage():
 def itemPage(item, **kwargs):
     """
     Loads page for a specific item
-    
+
     Also loads list of random items (4 or less) from the same category as
     selected item to display.
 
@@ -240,7 +250,7 @@ def itemPage(item, **kwargs):
     item.views += 1
     session.add(item)
     session.commit()
-    
+
     # create list of random items to showcase
     rand_items = session.query(Item).filter_by(category=item.category).all()
     rand_items.remove(item)
@@ -257,7 +267,7 @@ def itemPage(item, **kwargs):
         params["lists"] = lists
 
     return render_template("item.html", **params)
-    
+
 
 @app.route("/list/<int:list_id>")
 @list_exists
@@ -288,9 +298,9 @@ def addItemToList(item, item_list, **kwargs):
     session.add(item_list)
     session.commit()
 
-    flash("%s has been added to list: %s" %(item.name, item_list.name),
+    flash("%s has been added to list: %s" % (item.name, item_list.name),
           "success")
-    return redirect(url_for('itemPage', item_id=kwargs["item_id"]))
+    return redirect(url_for("itemPage", item_id=kwargs["item_id"]))
 
 
 @app.route("/listRemove/<int:item_id>/<int:list_id>", methods=["POST"])
@@ -313,7 +323,7 @@ def removeItemFromList(item, item_list, **kwargs):
     flash("%s has been removed from list: %s" % (item.name, item_list.name),
           "success")
 
-    return(redirect(url_for('userCreatedLists', list_id=item_list.id)))
+    return(redirect(url_for("userCreatedLists", list_id=item_list.id)))
 
 
 @app.route("/listMove/<int:item_id>", methods=["POST"])
@@ -334,7 +344,7 @@ def moveItemBetweenLists(item, user, **kwargs):
     to_list = session.query(ItemList).filter_by(id=to_list_id).first()
 
     if not from_list or not to_list:
-        print "list don't exist"
+        print "list doesn't exist"
         abort(404)
 
     if item not in from_list.items:
@@ -355,7 +365,7 @@ def moveItemBetweenLists(item, user, **kwargs):
     flash("%s has been move from list: %s to list: %s" %
           (item.name, from_list.name, to_list.name), "success")
 
-    return(redirect(url_for('userCreatedLists', list_id=from_list.id)))
+    return(redirect(url_for("userCreatedLists", list_id=from_list.id)))
 
 
 @app.route("/login")
@@ -368,7 +378,7 @@ def loginPage():
 
     # generate state var for validation after login attemp
     state = hashlib.sha256(os.urandom(1024)).hexdigest()
-    login_session['state'] = state
+    login_session["state"] = state
     return render_template("login.html", STATE=state)
 
 
@@ -386,13 +396,13 @@ def logout(user):
     login_session.clear()
 
     if not result:
-        response = make_response(json.dumps('Failed to revoke token'), 400)
-        response.headers['Content-Type'] = 'application/json'
+        response = make_response(json.dumps("Failed to revoke token"), 400)
+        response.headers["Content-Type"] = "application/json"
         return response
 
     flash("You are logged out", "danger")
 
-    return redirect(url_for('homepage'))
+    return redirect(url_for("homepage"))
 
 
 def allowedFile(filename):
@@ -400,21 +410,31 @@ def allowedFile(filename):
         return filename.split(".")[-1] in EXTENSIONS
 
 
-@app.route("/item/create", methods=['GET', 'POST'])
+def generate_filename(ext):
+    current_images = [fn for fn in os.listdir(app.config["UPLOAD_PATH"])]
+    newfilename = "".join(random.choice(string.ascii_letters + string.digits)
+                          for _ in range(16)) + "." + ext
+    while newfilename in current_images:
+        newfilename = "".join(random.choice(string.ascii_letters +
+                                            string.digits)
+                              for _ in range(16)) + "." + ext
+    return newfilename
+
+
+@app.route("/item/create", methods=["GET", "POST"])
 @user_logged_in
 def createItemPage(user):
-    """ 
+    """
     Loads page for creating a new item. Requires user to be logged in
     """
     errors = {}
     params = {}
 
-    if request.method == 'POST':
-        name = request.form['name']
-        category = request.form['category']
-        description = request.form['description']
+    if request.method == "POST":
+        name = request.form["name"]
+        category = request.form["category"]
+        description = request.form["description"]
         image = request.files.get("image")
-        
 
         params = {"name": name,
                   "category": category,
@@ -424,25 +444,24 @@ def createItemPage(user):
         form_valid = True
         if not name:
             form_valid = False
-            errors['name'] = "Item name is required"
+            errors["name"] = "Item name is required"
 
         if not category or category not in CATEGORIES:
             form_valid = False
-            errors['category'] = "Item category is invalid"
+            errors["category"] = "Item category is invalid"
 
         if not description:
             form_valid = False
-            errors['description'] = "Item description is required"
+            errors["description"] = "Item description is required"
 
-        #check file has valid extension
+        # check file has valid extension
         filename = None
         if image:
             filename = secure_filename(image.filename)
             if filename and not allowedFile(filename):
                 form_valid = False
-                errors['image'] = "Item image is not valid"
+                errors["image"] = "Item image is not valid"
                 filename = None
-
 
         if form_valid:
 
@@ -457,7 +476,7 @@ def createItemPage(user):
             if filename:
                 ext = filename.split(".")[-1]
                 filename = generate_filename(ext)
-                
+
                 fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
                 image.save(fullpath)
                 new_item.image = filename
@@ -465,15 +484,14 @@ def createItemPage(user):
             session.add(new_item)
             session.commit()
             flash("Item successfully created", "success")
-            return redirect(url_for('itemPage', item_id=new_item.id))
+            return redirect(url_for("itemPage", item_id=new_item.id))
         else:
             flash("Item create has failed, see errors below", "danger")
 
     return render_template("create.html",
-                            categories=CATEGORIES,
-                            errors=errors,
-                            params=params)
-
+                           categories=CATEGORIES,
+                           errors=errors,
+                           params=params)
 
 
 @app.route("/item/<int:item_id>/edit", methods=["GET", "POST"])
@@ -490,11 +508,11 @@ def editItemPage(item, **kwargs):
     errors = {}
 
     if request.method == "POST":
-        name = request.form['name']
-        category = request.form['category']
-        description = request.form['description']
+        name = request.form["name"]
+        category = request.form["category"]
+        description = request.form["description"]
         image = request.files.get("image")
-        
+
         params = {"name": name,
                   "category": category,
                   "description": description,
@@ -503,22 +521,22 @@ def editItemPage(item, **kwargs):
         form_valid = True
         if not name:
             form_valid = False
-            errors['name'] = "Item name is required"
+            errors["name"] = "Item name is required"
 
         if not category or category not in CATEGORIES:
             form_valid = False
-            errors['category'] = "Item category is required"
+            errors["category"] = "Item category is required"
 
         if not description:
             form_valid = False
-            errors['description'] = "Item description is required"
+            errors["description"] = "Item description is required"
 
         filename = None
         if image:
             filename = secure_filename(image.filename)
             if filename and not allowedFile(filename):
                 form_valid = False
-                errors['image'] = "Item image is not valid"
+                errors["image"] = "Item image is not valid"
                 filename = None
 
         if form_valid:
@@ -531,7 +549,7 @@ def editItemPage(item, **kwargs):
             if filename:
                 ext = filename.split(".")[-1]
                 filename = generate_filename(ext)
-                
+
                 # if item had previous image, delete if it is not the default
                 # item image
                 oldfile = item.image
@@ -556,7 +574,6 @@ def editItemPage(item, **kwargs):
                            categories=CATEGORIES)
 
 
-
 @app.route("/item/<int:item_id>/delete", methods=["POST"])
 @user_logged_in
 @item_exists
@@ -574,7 +591,7 @@ def deleteItem(item, **kwargs):
     session.commit()
 
     flash("%s has been deleted." % item.name, "success")
-    return redirect(url_for('userCreatedItems'))
+    return redirect(url_for("userCreatedItems"))
 
 
 @app.route("/self/items")
@@ -647,7 +664,7 @@ def userCreatedLists(user, list_id=None, item_list=None):
 
 
 @app.route("/list/create", methods=["POST"])
-@user_logged_in 
+@user_logged_in
 def createList(user):
     """
     Creates a new list
@@ -655,7 +672,7 @@ def createList(user):
     Args:
     user - user that is creating the list
     """
-    name = request.form['name']
+    name = request.form["name"]
 
     if name:
         new_list = ItemList(name=name, user=user)
@@ -665,7 +682,7 @@ def createList(user):
     else:
         flash("List not created, list name must not be empty", "danger")
 
-    return redirect(url_for('userCreatedLists'))
+    return redirect(url_for("userCreatedLists"))
 
 
 @app.route("/list/<int:list_id>/edit", methods=["GET", "POST"])
@@ -681,8 +698,8 @@ def editList(item_list, **kwargs):
     """
     errors = {}
     if request.method == "POST":
-        new_name = request.form['name']
-        new_public = request.form.get('public')
+        new_name = request.form["name"]
+        new_public = request.form.get("public")
         valid = True
 
         if not new_name:
@@ -698,7 +715,7 @@ def editList(item_list, **kwargs):
         else:
             flash("List changes not saved, see errors below", "danger")
 
-    return render_template("editlist.html", list=item_list, errors=errors)    
+    return render_template("editlist.html", list=item_list, errors=errors)
 
 
 @app.route("/list/<int:list_id>/delete", methods=["POST"])
@@ -716,7 +733,7 @@ def deleteList(item_list, **kwargs):
     session.commit()
 
     flash("List: %s has been deleted" % item_list.name, "danger")
-    return redirect(url_for('userCreatedLists'))
+    return redirect(url_for("userCreatedLists"))
 
 
 @app.route("/success")
@@ -727,7 +744,7 @@ def success():
     """
     # check if user already has an account using email
     found = session.query(exists().where(
-        User.email==login_session[EMAIL_KEY])).scalar() 
+        User.email == login_session[EMAIL_KEY])).scalar()
 
     # if no account, create one
     if not found:
@@ -743,130 +760,124 @@ def success():
     login_session[LOCAL_ID] = user.id
 
     flash("You are now logged in as %s" % login_session[USERNAME_KEY],
-        "success")
-    return redirect(url_for('homepage'))
+          "success")
+    return redirect(url_for("homepage"))
 
 
 @app.route("/gconnect", methods=["POST"])
 def gconnect2():
     """
     Trades Google OAuth one-time code for an access token, then verifies info
-    If user info is valid, stores user information in flask session, else 
+    If user info is valid, stores user information in flask session, else
     throw error
     """
 
     # Check that this url was requested via the google callback method
-    if not request.headers.get('X-Requested-With'):
-        client_response = make_response(json.dumps('Invalid header'), 401)
-        client_response.headers['Content-Type'] = 'application/json'
+    if not request.headers.get("X-Requested-With"):
+        client_response = make_response(json.dumps("Invalid header"), 401)
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
     # Check if state variable is the same as when the login page was requested
-    if request.args.get('state') != login_session['state']:
+    if request.args.get("state") != login_session["state"]:
         client_response = make_response(
-            json.dumps('Invalid state parameter.'), 401)
-        client_response.headers['Content-Type'] = 'application/json'
+            json.dumps("Invalid state parameter."), 401)
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
     # exchange one time code for user access token
     try:
-        flow = flow_from_clientsecrets('client_secrets.json',
-                                    scope='',
-                                    redirect_uri='postmessage')
+        flow = flow_from_clientsecrets("client_secrets.json",
+                                       scope="",
+                                       redirect_uri="postmessage")
         auth_code = request.data
         credentials = flow.step2_exchange(auth_code)
     except FlowExchangeError:
-        client_response = make_response(json.dumps('Unable to exchange code '
-            'for token'), 401)
+        client_response = make_response(json.dumps("Unable to exchange code "
+                                                   "for token"), 401)
 
-        client_response.headers['Content-Type'] = 'application/json'
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
     if credentials.access_token_expired:
         client_response = make_response(
-            json.dumps('Access token expired'), 401)
+            json.dumps("Access token expired"), 401)
 
-        client_response.headers['Content-Type'] = 'application/json'
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
     # Verify token id is same as user attempting to log in using google OAuth
     access_token = credentials.access_token
-    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
-    response = requests.get(url, params={'access_token': access_token})
+    url = "https://www.googleapis.com/oauth2/v1/tokeninfo"
+    response = requests.get(url, params={"access_token": access_token})
     result = response.json()
 
-    google_id = credentials.id_token['sub']
-    if result['user_id'] != google_id:
+    google_id = credentials.id_token["sub"]
+    if result["user_id"] != google_id:
         client_response = make_response(json.dumps("Token's user ID doesn't "
-            "match given user ID."), 401)
+                                                   "match given user ID."),
+                                        401)
 
-        client_response.headers['Content-Type'] = 'application/json'
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
-
     # Verify that the access token is valid for this app.
-    if result['issued_to'] != CLIENT_ID:
+    if result["issued_to"] != CLIENT_ID:
         client_response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
         print "Token's client ID does not match app's."
-        client_response.headers['Content-Type'] = 'application/json'
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
-
 
     # Check if user is connected
-    stored_access_token = login_session.get('access_token')
-    stored_google_id = login_session.get('google_id')
+    stored_access_token = login_session.get("access_token")
+    stored_google_id = login_session.get("google_id")
     if stored_access_token is not None and google_id == stored_google_id:
-        client_response = make_response(json.dumps('Current user is already '
-                                    'connected.'), 200)
-        client_response.headers['Content-Type'] = 'application/json'
+        client_response = make_response(json.dumps("Current user is already "
+                                                   "connected."), 200)
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
-
 
     # Store the access token in the session for later use.
     login_session[ACCESS_TOKEN_KEY] = credentials.access_token
     login_session[ID_KEY] = google_id
 
-
     # Get user info to store in flask session
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt': 'json'}
+    params = {"access_token": credentials.access_token, "alt": "json"}
     answer = requests.get(userinfo_url, params=params)
     data = answer.json()
 
-
     # Store user info in session
-    login_session[USERNAME_KEY] = data['name']
-    login_session[PICTURE_KEY] = data['picture']
-    login_session[EMAIL_KEY] = data['email']
+    login_session[USERNAME_KEY] = data["name"]
+    login_session[PICTURE_KEY] = data["picture"]
+    login_session[EMAIL_KEY] = data["email"]
     login_session[PROVIDER_KEY] = GOOGLE
 
-
-    client_response = make_response(json.dumps('User is logged in.'), 200)
-    client_response.headers['Content-Type'] = 'application/json'
+    client_response = make_response(json.dumps("User is logged in."), 200)
+    client_response.headers["Content-Type"] = "application/json"
     return client_response
 
 
 @app.route("/fbconnect", methods=["POST"])
 def fbconnect():
     """
-    Trades Facebook short time token for long time token, then 
-    verifies access token info. If valid, stores user info in 
+    Trades Facebook short time token for long time token, then
+    verifies access token info. If valid, stores user info in
     Flask session, else throw error
     """
     # Check that this url was requested via the google callback method
-    if not request.headers.get('X-Requested-With'):
-        client_response = make_response(json.dumps('Invalid header'), 401)
-        client_response.headers['Content-Type'] = 'application/json'
+    if not request.headers.get("X-Requested-With"):
+        client_response = make_response(json.dumps("Invalid header"), 401)
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
 
     # check state parameter
     if request.args.get("state") != login_session["state"]:
         client_response = make_response(
-            json.dumps('Invalid state parameter.'), 401)
-        client_response.headers['Content-Type'] = 'application/json'
+            json.dumps("Invalid state parameter."), 401)
+        client_response.headers["Content-Type"] = "application/json"
         return client_response
-
 
     # exchange short term access for long term
     url = "https://graph.facebook.com/oauth/access_token"
@@ -922,23 +933,22 @@ def fbconnect():
         "fields": "email,name,picture",
         "access_token": access_token,
     }
-    
+
     response = requests.get(user_info_url, params=params)
     if response.status_code != 200:
         pass
 
     r = response.json()
 
-    login_session[ID_KEY] = r["id"]    
+    login_session[ID_KEY] = r["id"]
     login_session[EMAIL_KEY] = r["email"]
     login_session[USERNAME_KEY] = r["name"]
     login_session[PICTURE_KEY] = r["picture"]["data"]["url"]
     login_session[ACCESS_TOKEN_KEY] = access_token
     login_session[PROVIDER_KEY] = FACEBOOK
 
-
-    client_response = make_response(json.dumps('User is logged in.'), 200)
-    client_response.headers['Content-Type'] = 'application/json'
+    client_response = make_response(json.dumps("User is logged in."), 200)
+    client_response.headers["Content-Type"] = "application/json"
     return client_response
 
 
@@ -946,9 +956,9 @@ def gdisconnect():
     """
     Revokes access token for user in Google OAuth
     """
-    url = ('https://accounts.google.com/o/oauth2/revoke')
+    url = ("https://accounts.google.com/o/oauth2/revoke")
     result = requests.get(url,
-                          params={'token': login_session['access_token']})
+                          params={"token": login_session["access_token"]})
 
     return result.status_code == 200
 
@@ -966,7 +976,7 @@ def fbdisconnect():
 
 def get_fb_app_access_token():
     """
-    Retrieves access token for this app, primarily used for verifying user 
+    Retrieves access token for this app, primarily used for verifying user
     access tokens
 
     Returns: Access token as string if successful
@@ -984,7 +994,7 @@ def get_fb_app_access_token():
         return
 
     result = response.json()
-    app_id = result["access_token"].split('|')[0]
+    app_id = result["access_token"].split("|")[0]
 
     # Check app id matches this client id
     if app_id != FB_CLIENT_ID:
@@ -994,6 +1004,6 @@ def get_fb_app_access_token():
     return result["access_token"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host="0.0.0.0", port=5000)
