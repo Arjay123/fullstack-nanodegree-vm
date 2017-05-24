@@ -130,4 +130,4 @@ def create_db(uri="sqlite:///itemcatalog.db"):
     engine = create_engine(uri)
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-    print "okay"
+    print "Database created under %s" % uri

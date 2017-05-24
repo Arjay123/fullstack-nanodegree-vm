@@ -51,6 +51,14 @@ FACEBOOK = "facebook"
 GOOGLE = "google"
 DEFAULT_ITEM_IMAGE = "noimage.png"
 
+CATEGORIES = ["Art Supplies",
+              "Clothing",
+              "Electronics",
+              "Food",
+              "Home Supplies",
+              "Kitchenware",
+              "Video Games",
+              "Sports"]
 
 @app.errorhandler(404)
 def resource_not_found(e):
@@ -126,15 +134,6 @@ def generate_filename(ext):
     return newfilename
 
 
-def get_categories():
-    """
-    Retrieves all available item catagories
-
-    Returns:
-        List of all categories as strings
-    """
-    categories = session.query(Item.category).group_by(Item.category).all()
-    return [cat[0] for cat in categories]
 
 
 @app.route("/images/<filename>")
@@ -166,7 +165,7 @@ def userJSON(user):
     return jsonify(user=user.serialize, user_items=[i.serialize for i in user_items], user_lists=user_lists)
 
 
-@app.route("/lists/<int:list_id>.json")
+@app.route("/list/<int:list_id>.json")
 @list_exists
 def listJSON(item_list, **kwargs):
     """
@@ -207,7 +206,7 @@ def catalogPage():
     if "views" in order:
         order_param = Item.views
 
-    categories = get_categories()
+
     if category:
         items = session.query(Item).filter_by(category=category)
     else:
@@ -220,7 +219,7 @@ def catalogPage():
 
     return render_template("catalog.html",
                             category=category,
-                            categories=categories,
+                            categories=CATEGORIES,
                             items=items)
 
 
@@ -427,9 +426,9 @@ def createItemPage(user):
             form_valid = False
             errors['name'] = "Item name is required"
 
-        if not category:
+        if not category or category not in CATEGORIES:
             form_valid = False
-            errors['category'] = "Item category is required"
+            errors['category'] = "Item category is invalid"
 
         if not description:
             form_valid = False
@@ -471,7 +470,7 @@ def createItemPage(user):
             flash("Item create has failed, see errors below", "danger")
 
     return render_template("create.html",
-                            categories=get_categories(),
+                            categories=CATEGORIES,
                             errors=errors,
                             params=params)
 
@@ -506,7 +505,7 @@ def editItemPage(item, **kwargs):
             form_valid = False
             errors['name'] = "Item name is required"
 
-        if not category:
+        if not category or category not in CATEGORIES:
             form_valid = False
             errors['category'] = "Item category is required"
 
@@ -554,7 +553,7 @@ def editItemPage(item, **kwargs):
     return render_template("edit.html",
                            item=item,
                            errors=errors,
-                           categories=get_categories())
+                           categories=CATEGORIES)
 
 
 
@@ -752,8 +751,8 @@ def success():
 def gconnect2():
     """
     Trades Google OAuth one-time code for an access token, then verifies info
-    If user info is valid, stores user information in flask session, else throw
-    error
+    If user info is valid, stores user information in flask session, else 
+    throw error
     """
 
     # Check that this url was requested via the google callback method
@@ -948,7 +947,8 @@ def gdisconnect():
     Revokes access token for user in Google OAuth
     """
     url = ('https://accounts.google.com/o/oauth2/revoke')
-    result = requests.get(url, params={'token': login_session['access_token']})
+    result = requests.get(url,
+                          params={'token': login_session['access_token']})
 
     return result.status_code == 200
 

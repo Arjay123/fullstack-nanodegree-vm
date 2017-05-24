@@ -23,6 +23,14 @@ body {
     border-color: transparent;
 }
 
+.dropdown-btn {
+    background-color: white;
+    border-width: 0;
+}
+
+.list-move-dropdown {
+    top: 20px;
+}
 
 .logo {
     margin-top: 10px;

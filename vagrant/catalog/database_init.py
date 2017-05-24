@@ -145,3 +145,4 @@ item_list3.items.append(item9)
 
 session.add_all([item_list1, item_list2, item_list3])
 session.commit()
+print "Database sample data added"
