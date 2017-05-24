@@ -5,7 +5,7 @@
 
 {% block import_scripts %}
 <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer>
-  </script>
+</script>
 
 {% endblock %}
 
@@ -15,23 +15,23 @@
 
 {% block opening_scripts %}
 <script>
-window.fbAsyncInit = function() {
-FB.init({
-  appId      : '308207202947239',
-  cookie     : true,
-  xfbml      : true,
-  version    : 'v2.8'
-});
-FB.AppEvents.logPageView();   
-};
+    window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '308207202947239',
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v2.8'
+      });
+        FB.AppEvents.logPageView();   
+    };
 
-(function(d, s, id){
- var js, fjs = d.getElementsByTagName(s)[0];
- if (d.getElementById(id)) {return;}
- js = d.createElement(s); js.id = id;
- js.src = "//connect.facebook.net/en_US/sdk.js";
- fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));
+    (function(d, s, id){
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) {return;}
+       js = d.createElement(s); js.id = id;
+       js.src = "//connect.facebook.net/en_US/sdk.js";
+       fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
 </script>
 {% endblock opening_scripts %}
 
@@ -39,52 +39,52 @@ FB.AppEvents.logPageView();
 <meta name="google-signin-client_id" content="630208032124-lkj6h9hrlbhk9mg42mqejg88c2gvt3jg.apps.googleusercontent.com">
 
 <div class="row">
-<div id='result' class="col-xs-12">
+    <div id='result' class="col-xs-12">
 
 
-<div class="row logo">
-    <div class="col-xs-6 col-xs-offset-3">
-        <img class="logo-img img-responsive center-block" src="{{url_for('image_file', filename='logo.png')}}">
-    </div>
-</div>
-
-<div class="row login">
-    <div class="col-xs-6 col-xs-offset-3">
-        <div class="panel panel-default">
-          <div class="panel-body">
-            <div class="header text-center">
-                <h3>Login</h3>
+        <div class="row logo">
+            <div class="col-xs-6 col-xs-offset-3">
+                <img class="logo-img img-responsive center-block" src="{{url_for('image_file', filename='logo.png')}}">
             </div>
-            <div class="login-auths text-center">
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div id="signInButton">
-                          <span class="g-signin2"
-                            data-scope="openid email"
-                            data-redirecturi="postmessage"
-                            data-accesstype="offline"
-                            data-cookiepolicy="single_host_origin"
-                            data-onsuccess="signInCallback"
-                            data-onfailure="onSignInFailure"
-                            data-approvalprompt="force">
-                          </span>
-                        </div>
+        </div>
+
+        <div class="row login">
+            <div class="col-xs-6 col-xs-offset-3">
+                <div class="panel panel-default">
+                  <div class="panel-body">
+                    <div class="header text-center">
+                        <h3>Login</h3>
                     </div>
-                </div>
-                <br>
-                <div class="row">
+                    <div class="login-auths text-center">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div id="signInButton">
+                                  <span class="g-signin2"
+                                  data-scope="openid email"
+                                  data-redirecturi="postmessage"
+                                  data-accesstype="offline"
+                                  data-cookiepolicy="single_host_origin"
+                                  data-onsuccess="signInCallback"
+                                  data-onfailure="onSignInFailure"
+                                  data-approvalprompt="force">
+                              </span>
+                          </div>
+                      </div>
+                  </div>
+                  <br>
+                  <div class="row">
                     <div class="col-xs-12">
                         <fb:login-button 
-                          scope="public_profile,email"
-                          onlogin="checkLoginState()">
-                        </fb:login-button>
-                    </div>
+                        scope="public_profile,email"
+                        onlogin="checkLoginState()">
+                    </fb:login-button>
                 </div>
-
             </div>
-          </div>
+
         </div>
     </div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -96,46 +96,46 @@ FB.AppEvents.logPageView();
 {% block scripts %}
 <script>
 
-function signInCallback(authResult){
-    if (authResult['code']) {
-        $('#signInButton').attr('style', 'display: none');
+    function signInCallback(authResult){
+        if (authResult['code']) {
+            $('#signInButton').attr('style', 'display: none');
 
-        $.ajax({
-            type: 'POST',
-            url: '/gconnect?state={{STATE}}',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            processData: false,
-            contentType: 'application/octet-stream; charset=utf-8',
-            data: authResult['code'],
-            success: function(result) {
-                if (result){
-                    window.location.href='/success'
-                } else if (authResult['error']) {
-                    console.log('There was an error: ' + authResult['error']);
-                } else {
-                    $('#result').html('Failed to make a server-side call. Check your configuration and console');
+            $.ajax({
+                type: 'POST',
+                url: '/gconnect?state={{STATE}}',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                processData: false,
+                contentType: 'application/octet-stream; charset=utf-8',
+                data: authResult['code'],
+                success: function(result) {
+                    if (result){
+                        window.location.href='/success'
+                    } else if (authResult['error']) {
+                        console.log('There was an error: ' + authResult['error']);
+                    } else {
+                        $('#result').html('Failed to make a server-side call. Check your configuration and console');
+                    }
                 }
-            }
-        });
+            });
+        }
     }
-}
 
 
-function onSigninFailure(error){
-    console.log(error)
-}
+    function onSigninFailure(error){
+        console.log(error)
+    }
 
 
-function checkLoginState() {
-  FB.getLoginStatus(function(response) {
-    statusChangeCallback(response);
-  });
-}
+    function checkLoginState() {
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+    });
+  }
 
 
-function statusChangeCallback(response){
+  function statusChangeCallback(response){
     if (response['status'] == "connected"){
         console.log(response['authResponse']['accessToken'])
 

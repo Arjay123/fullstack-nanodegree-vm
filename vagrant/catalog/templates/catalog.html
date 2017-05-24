@@ -9,29 +9,29 @@
           <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             Filter by 
             <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
             <li><a href="{{url_for('catalogPage', category=category, order='name')}}">Name (A-Z)</a></li>
             <li><a href="{{url_for('catalogPage', category=category, order='name_desc')}}">Name (Z-A)</a></li>
             <li><a href="{{url_for('catalogPage', category=category, order='views_desc')}}">Most Viewed</a></li>
             <li><a href="{{url_for('catalogPage', category=category, order='views')}}">Least Viewed</a></li>
 
-          </ul>
-        </div>
-
-        {% for item in items %}
-        {{list_item(item)}}
-        <hr>
-        {% endfor %}
-    </div>
-    <div class="col-xs-12 col-sm-3 col-sm-pull-9 categories">
-        <ul class="list-group">
-            <h3>Categories</h3>
-            {% for cat in categories %}
-            <a class="list-group-item {% if cat == category %} active {% endif %}" href="{{url_for('catalogPage', category=cat)}}">{{cat}}</a>
-            {% endfor %}
         </ul>
     </div>
+
+    {% for item in items %}
+    {{list_item(item)}}
+    <hr>
+    {% endfor %}
+</div>
+<div class="col-xs-12 col-sm-3 col-sm-pull-9 categories">
+    <ul class="list-group">
+        <h3>Categories</h3>
+        {% for cat in categories %}
+        <a class="list-group-item {% if cat == category %} active {% endif %}" href="{{url_for('catalogPage', category=cat)}}">{{cat}}</a>
+        {% endfor %}
+    </ul>
+</div>
 </div>
 
 

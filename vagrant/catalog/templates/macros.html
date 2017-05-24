@@ -53,13 +53,13 @@
 
 
 {% macro msg_flash() %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, message in messages %}
-        <div class="alert alert-{{category}}" role="alert">{{message}}</div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{category}}" role="alert">{{message}}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 {% endmacro %}
 
 
@@ -91,12 +91,12 @@
 
 <script>
 
-var $grid = $(".featured-items").imagesLoaded(function() {
+    var $grid = $(".featured-items").imagesLoaded(function() {
   // init Masonry after all images have loaded
   $grid.isotope({
     itemSelector: ".item-container",
     layoutMode: "fitRows"
-  });
+});
 });
 </script>
 

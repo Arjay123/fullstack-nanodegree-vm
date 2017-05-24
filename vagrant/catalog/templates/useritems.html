@@ -8,49 +8,45 @@
         <table class="table table-condensed">
             <caption>Your created items</caption>
             <thead>
-            <tr>
-                <th>Item name</th>
-                <th class="text-right">Controls</th>
-            </tr>
+                <tr>
+                    <th>Item name</th>
+                    <th class="text-right">Controls</th>
+                </tr>
             </thead>
             {% for item in items %}
             <tbody>
-            <tr>
-                <td><a href="{{url_for('itemPage', item_id=item.id)}}">{{item.name}}</a></td>
-                <td class="text-right">
-                    <a class="btn btn-default delete" href="{{url_for('editItemPage', item_id=item.id)}}">Edit</a>
-                    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-id="{{item.id}}" data-item-name="{{item.name}}">
-                    Delete
-                    </button>
-                </td>
-            </tr>
+                <tr>
+                    <td><a href="{{url_for('itemPage', item_id=item.id)}}">{{item.name}}</a></td>
+                    <td class="text-right">
+                        <a class="btn btn-default delete" href="{{url_for('editItemPage', item_id=item.id)}}">Edit</a>
+                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-id="{{item.id}}" data-item-name="{{item.name}}">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
             </tbody>
             {% endfor %}
         </table>
         <a href="{{url_for('createItemPage')}}" class="btn btn-primary modal-btn-delete">Create new item</a>
     </div>
 
-
-
     <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-body">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h2 class="modal-item-msg"></h2>
-            <div class="btn-grp text-right">
-                <form method="POST" class="modal-form-submit">
-                    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h2 class="modal-item-msg"></h2>
+                    <div class="btn-grp text-right">
+                        <form method="POST" class="modal-form-submit">
+                            <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-
-
 </div>
 
 {% endblock %}

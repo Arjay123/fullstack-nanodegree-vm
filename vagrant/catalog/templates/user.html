@@ -14,9 +14,9 @@
     <div class="col-xs-9 user-lists">
         <h5>User's public item lists</h5>
         <ul class="list-group">
-        {% for list in user_lists %}
-        <a class="list-group-item" href="{{url_for('itemListPage', list_id=list.id)}}">{{list.name}}</a>
-        {% endfor %}
+            {% for list in user_lists %}
+            <a class="list-group-item" href="{{url_for('itemListPage', list_id=list.id)}}">{{list.name}}</a>
+            {% endfor %}
         </ul>
     </div>
 </div>

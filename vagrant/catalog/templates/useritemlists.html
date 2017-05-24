@@ -5,69 +5,69 @@
 {% block content %}
 
 <div class="row">
-    <div class="col-xs-12 col-sm-push-3 col-sm-9">
-        {% if sel_list %}
-          {% if sel_list.items|length > 0 %}
-            <div class="row list-hdr row-eq-height">
-              <div class="col-xs-12">
-                <h3>Items in {{sel_list.name}}</h3>
-                <a  href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
-              </div>
-              
-            </div>
-            {% for item in sel_list.items %}
-            <div class="row item row-eq-height">
-              <div class="col-xs-3 item-image-container">
-                  <a href="#"><img class="img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
-              </div>
-              <div class="col-xs-6">
-                  <h4>{{item.name}}</h4>
-                  <h6>{{item.user.name}}</h6>
-                  <p>{{item.description}}</p>
-                  <h6>{{item.views}} views</h6>
-              </div>
-              <div class="col-xs-3">
-                <form method="POST" action="{{url_for('moveItemBetweenLists', item_id=item.id)}}">
-                    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-                    <input name="item_id" type=hidden value="{{item.id}}">
-                    <input name="from_list_id" type=hidden value="{{sel_list.id}}">
-                    <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
-                    <ul class="list-move-dropdown dropdown-menu">
-                      {%for list in lists %}
-                        <li><button class="dropdown-btn" type="submit" name="move" value="{{list.id}}">{{list.name}}</button></li>
-                      {% endfor %}
-                    </ul>
-                </form>
-                <form method="POST" action="{{url_for('removeItemFromList', item_id=item.id, list_id=sel_list.id)}}">
-                    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-                    <input name="list_id" type=hidden value="{{sel_list.id}}">
-                    <input type="submit" type="button" value="Delete" class="btn btn-danger btn-xs">
-                </form>
-              </div>
-            </div>
-            <hr>
+  <div class="col-xs-12 col-sm-push-3 col-sm-9">
+    {% if sel_list %}
+    {% if sel_list.items|length > 0 %}
+    <div class="row list-hdr row-eq-height">
+      <div class="col-xs-12">
+        <h3>Items in {{sel_list.name}}</h3>
+        <a  href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
+      </div>
+      
+    </div>
+    {% for item in sel_list.items %}
+    <div class="row item row-eq-height">
+      <div class="col-xs-3 item-image-container">
+        <a href="#"><img class="img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
+      </div>
+      <div class="col-xs-6">
+        <h4>{{item.name}}</h4>
+        <h6>{{item.user.name}}</h6>
+        <p>{{item.description}}</p>
+        <h6>{{item.views}} views</h6>
+      </div>
+      <div class="col-xs-3">
+        <form method="POST" action="{{url_for('moveItemBetweenLists', item_id=item.id)}}">
+          <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+          <input name="item_id" type=hidden value="{{item.id}}">
+          <input name="from_list_id" type=hidden value="{{sel_list.id}}">
+          <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+          <ul class="list-move-dropdown dropdown-menu">
+            {%for list in lists %}
+            <li><button class="dropdown-btn" type="submit" name="move" value="{{list.id}}">{{list.name}}</button></li>
             {% endfor %}
-          {% else %}
-            <h4>{{sel_list.name}} is empty! Any items added to this list will show up here.</h4>
-            <a href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
-          {% endif %}
-        {% else %}
-          <h4>You have no lists! Create one now to save items</h4>
-        {% endif %}
-            
+          </ul>
+        </form>
+        <form method="POST" action="{{url_for('removeItemFromList', item_id=item.id, list_id=sel_list.id)}}">
+          <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+          <input name="list_id" type=hidden value="{{sel_list.id}}">
+          <input type="submit" type="button" value="Delete" class="btn btn-danger btn-xs">
+        </form>
+      </div>
     </div>
+    <hr>
+    {% endfor %}
+    {% else %}
+    <h4>{{sel_list.name}} is empty! Any items added to this list will show up here.</h4>
+    <a href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
+    {% endif %}
+    {% else %}
+    <h4>You have no lists! Create one now to save items</h4>
+    {% endif %}
+    
+  </div>
 
 
-    <div class="col-xs-12 col-sm-pull-9 col-sm-3">
-        <h4>Your lists</h4>
-        <ul class="list-group">
-        {% for list in lists %}
-        <a class="list-group-item" href="{{url_for('userCreatedLists', list_id=list.id)}}">{{list.name}}</a>
-        {% endfor %}
-        </ul>
+  <div class="col-xs-12 col-sm-pull-9 col-sm-3">
+    <h4>Your lists</h4>
+    <ul class="list-group">
+      {% for list in lists %}
+      <a class="list-group-item" href="{{url_for('userCreatedLists', list_id=list.id)}}">{{list.name}}</a>
+      {% endfor %}
+    </ul>
 
-        <a data-toggle="modal" data-target="#myModal">Create new list</a>
-    </div>
+    <a data-toggle="modal" data-target="#myModal">Create new list</a>
+  </div>
 </div>
 
 
@@ -82,9 +82,9 @@
       </div>
       <div class="modal-body">
         <form method="POST" action="{{url_for('createList')}}">
-            <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-            <input type="text" name="name">
-            <button type="submit" class="btn btn-default">Create</button>
+          <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+          <input type="text" name="name">
+          <button type="submit" class="btn btn-default">Create</button>
         </form>
       </div>
     </div>

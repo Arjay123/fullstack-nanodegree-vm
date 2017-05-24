@@ -24,20 +24,20 @@
           <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Add item to list <span class="caret"></span></a>
           <ul class="dropdown-menu">
             {%for list in lists %}
-              <li><button class="dropdown-btn" type="submit" onclick='this.form.action="{{url_for("addItemToList", item_id=sel_item.id, list_id=list.id)}}"' name="add" value="{{list.id}}">{{list.name}}</button></li>
+            <li><button class="dropdown-btn" type="submit" onclick='this.form.action="{{url_for("addItemToList", item_id=sel_item.id, list_id=list.id)}}"' name="add" value="{{list.id}}">{{list.name}}</button></li>
             {% endfor %}
-          </ul>
-        </form>
-        {% endif %}
-    </div>
-    <div class="col-xs-8 text-right">
-        {% if "id" in session and session["id"] == sel_item.user.id %}
-        <a class="btn btn-primary" href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a>
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal">
+        </ul>
+    </form>
+    {% endif %}
+</div>
+<div class="col-xs-8 text-right">
+    {% if "id" in session and session["id"] == sel_item.user.id %}
+    <a class="btn btn-primary" href="{{url_for('editItemPage', item_id=sel_item.id)}}">Edit</a>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deleteModal">
         Delete
-        </button>
-        {% endif %}
-    </div>
+    </button>
+    {% endif %}
+</div>
 </div>
 <div class="row items-similar-hdr">
     <div class="col-xs-12"><h2>More items like this one</h2></div>
@@ -46,9 +46,9 @@
     <div class="col-xs-12">
         <div class="row">
 
-        {% for item in items %}
+            {% for item in items %}
             {{ item_preview(item)}}
-        {% endfor %}
+            {% endfor %}
 
             
         </div>
@@ -69,9 +69,9 @@
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>
-      </div>
     </div>
-  </div>
+</div>
+</div>
 </div>
 
 {% endblock content %}
