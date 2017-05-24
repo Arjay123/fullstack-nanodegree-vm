@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% from "macros.html" import list_item %}
 
 {% block content %}
 
@@ -20,17 +20,7 @@
         </div>
 
         {% for item in items %}
-        <div class="row item">
-            <div class="col-xs-4 item-image-container">
-                <a href="{{url_for('itemPage', item_id=item.id)}}"><img class="item-img center-block img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
-            </div>
-            <div class="col-xs-8">
-                <h4><a href="{{url_for('itemPage', item_id=item.id)}}">{{item.name}}</a></h4>
-                <h6>Created by <a href="{{url_for('userPage', user_id=item.user.id)}}">{{item.user.name}}</a></h6>
-                <p>{{item.description}}</p>
-                <h6>{{item.views}} views</h6>
-            </div>
-        </div>
+        {{list_item(item)}}
         <hr>
         {% endfor %}
     </div>

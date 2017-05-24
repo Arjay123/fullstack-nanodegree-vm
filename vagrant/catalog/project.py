@@ -51,7 +51,37 @@ GOOGLE = "google"
 
 
 
+@app.errorhandler(404)
+def resource_not_found(e):
+    """
+    Error handler for 404 errors (i.e. item/item_list/user not found, page
+    doesn't exist)
+    """
+    return render_template("error.html",
+                           error=404,
+                           error_msg="Resource not found")
 
+@app.errorhandler(403)
+def resource_not_owned(e):
+    """
+    Error handler for 403 errors (i.e. user trying to edit/delete a resource
+    that they don't own)
+    """
+    return render_template("error.html",
+                           error=403,
+                           error_msg="You cannot edit/delete a resource if "
+                           "you are not the owner")
+
+@app.errorhandler(401)
+def resource_not_owned(e):
+    """
+    Error handler for 401 errors (i.e. user attempting to access page that
+    requires login)
+    """
+    return render_template("error.html",
+                           error=401,
+                           error_msg="You must be logged in to view that "
+                           "page")
 
 @app.before_request
 def csrf_protect():
@@ -66,7 +96,6 @@ def csrf_protect():
     by Dan Jacob and has been provided free of use.
     """
     if request.method == "POST" and "connect" not in request.path:
-        
         token = login_session.pop('_csrf_token', None)
         print token, request.path
         if not token or token != request.form.get('_csrf_token'):
@@ -74,13 +103,16 @@ def csrf_protect():
 
 
 def generate_csrf_token():
+    """
+    Generates token to prevent CSRF attacks, used in forms that submit using
+    POST
+    """
     if "_csrf_token" not in login_session:
         login_session["_csrf_token"] = hashlib.sha256(
             os.urandom(1024)).hexdigest()
     return login_session["_csrf_token"]
 
 app.jinja_env.globals["csrf_token"] = generate_csrf_token
-
 
 
 def get_categories():
@@ -96,6 +128,9 @@ def get_categories():
 
 @app.route("/static/images/<filename>")
 def image_file(filename):
+    """
+    Serves image files
+    """
     return send_from_directory(app.config["UPLOAD_PATH"], filename)
 
 
@@ -103,7 +138,7 @@ def image_file(filename):
 @item_exists
 def itemPageJSON(item, **kwargs):
     """
-    Loads serialized JSON format of item
+    Loads serialized JSON format of item if exist
     """
     return jsonify(item=item.serialize)
 
@@ -111,6 +146,9 @@ def itemPageJSON(item, **kwargs):
 @app.route("/user/<int:user_id>.json")
 @user_exists
 def userJSON(user):
+    """
+    Loads serialized JSON format of user if exist
+    """
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
     user_lists = [l.serialize for l in user_lists if l.public]
@@ -120,7 +158,13 @@ def userJSON(user):
 @app.route("/lists/<int:list_id>.json")
 @list_exists
 def listJSON(item_list, **kwargs):
-    return jsonify(item_list.serialize)
+    """
+    Loads serialized JSON format of list if exist
+    """
+    if item_list.public:
+        return jsonify(list=item_list.serialize)
+    else:
+        return jsonify(error="The owner of this list has not made it public")
 
 
 @app.route("/")
@@ -128,7 +172,7 @@ def homepage():
     """
     Loads homepage w/ most viewed items showcased
     """
-    items = session.query(Item).order_by(desc(Item.views)).limit(4)
+    items = session.query(Item).order_by(desc(Item.views)).limit(5)
     return render_template("homepage.html", items=items)
 
 
@@ -169,10 +213,6 @@ def catalogPage():
                             items=items)
 
 
-
-
-
-
 @app.route("/item/<int:item_id>")
 @item_exists
 def itemPage(item, **kwargs):
@@ -200,7 +240,7 @@ def itemPage(item, **kwargs):
     params = {"sel_item": item,
               "items": rand_items}
 
-    # if user logged in, pass in their item lists
+    # if user logged in, pass their item lists
     if USERNAME_KEY in login_session:
         user = session.query(User).filter_by(id=login_session[LOCAL_ID]).one()
         lists = session.query(ItemList).filter_by(user=user).all()
@@ -209,12 +249,24 @@ def itemPage(item, **kwargs):
     return render_template("item.html", **params)
     
 
+@app.route("/list/<int:list_id>")
+@list_exists
+def itemListPage(item_list, **kwargs):
+    """
+    Views an item list if user has made it public
+    """
+    if item_list.public:
+        return render_template("itemlist.html", item_list=item_list)
+    else:
+        return render_template("itemlist.html", item_list=None)
+
+
 @app.route("/listAdd/<int:item_id>/<int:list_id>", methods=["POST"])
 @user_logged_in
 @item_exists
 @list_exists
 @user_owns_list
-def addItemToList(user, item, item_list, **kwargs):
+def addItemToList(item, item_list, **kwargs):
     """
     Adds item to item list
 
@@ -231,14 +283,13 @@ def addItemToList(user, item, item_list, **kwargs):
     return redirect(url_for('itemPage', item_id=kwargs["item_id"]))
 
 
-
 @app.route("/listRemove/<int:item_id>/<int:list_id>", methods=["POST"])
 @user_logged_in
 @item_exists
 @list_exists
 @user_owns_list
 @item_in_list
-def removeItemFromList(user, item, item_list, **kwargs):
+def removeItemFromList(item, item_list, **kwargs):
     """
     Remove item from item list
 
@@ -339,7 +390,6 @@ def allowedFile(filename):
         return filename.split(".")[-1] in EXTENSIONS
 
 
-
 @app.route("/create", methods=['GET', 'POST'])
 @user_logged_in
 def createItemPage(user):
@@ -383,9 +433,9 @@ def createItemPage(user):
             #attempt save image
             if image:
                 filename = secure_filename(image.filename)
-                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
-                image.save(fullpath)
-                if filename:
+                if filename and allowedFile(filename):
+                    fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                    image.save(fullpath)
                     new_item.image = filename
 
             session.add(new_item)
@@ -406,19 +456,13 @@ def createItemPage(user):
 @user_logged_in
 @item_exists
 @user_owns_item
-def editItemPage(item, user, **kwargs):
+def editItemPage(item, **kwargs):
     """
     Load page for editing item.
 
     Args:
         item - item to be edited
     """
-    if not item:
-        return "This item doesn't exist: %s" % str(item.id)
-
-    if item.user != user:
-        return "You don't have authorization for that"
-
     errors = {}
 
     if request.method == "POST":
@@ -447,12 +491,16 @@ def editItemPage(item, user, **kwargs):
             item.description = description
 
             if image:
-                oldfile = item.image
-                os.remove(os.path.join(app.config["UPLOAD_PATH"], oldfile))
                 filename = secure_filename(image.filename)
-                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
-                image.save(fullpath)
-                if filename:
+                if filename and allowedFile(filename):
+                    oldfile = item.image
+                    if oldfile:
+                        os.remove(os.path.join(app.config["UPLOAD_PATH"],
+                                  oldfile))
+
+                    fullpath = os.path.join(app.config["UPLOAD_PATH"],
+                                            filename)
+                    image.save(fullpath)
                     item.image = filename
 
             session.add(item)
@@ -494,6 +542,9 @@ def deleteItem(item, **kwargs):
 def userCreatedItems(user):
     """
     Loads manager page for all items created by user
+
+    Args:
+        user - user to retrieve items for
     """
     items = session.query(Item).filter_by(user=user).all()
     return render_template("useritems.html", items=items)
@@ -502,7 +553,12 @@ def userCreatedItems(user):
 @app.route("/user/<int:user_id>")
 @user_exists
 def userPage(user):
+    """
+    Page for a user, showcasing their created items and public item lists
 
+    Args:
+        user - user to load page of
+    """
     user_items = session.query(Item).filter_by(user=user).all()
     user_lists = session.query(ItemList).filter_by(user=user).all()
     user_lists = [l.serialize for l in user_lists if l.public]
@@ -519,12 +575,14 @@ def userPage(user):
 @app.route("/selfPage")
 @user_logged_in
 def selfPage(user):
+    """
+    Redirects logged in user to their userpage
+    """
     return redirect(url_for("userPage", user_id=user.id))
 
 
-
-@app.route("/self/lists")
-@app.route("/self/lists/<int:list_id>")
+@app.route("/self/list")
+@app.route("/self/list/<int:list_id>")
 @user_logged_in
 @list_exists
 @user_owns_list
@@ -566,7 +624,6 @@ def createList(user):
         flash("List created", "success")
     else:
         flash("List not created, list name must not be empty", "danger")
-
 
     return redirect(url_for('userCreatedLists'))
 
@@ -651,7 +708,6 @@ def success():
     flash("You are now logged in as %s" % login_session[USERNAME_KEY],
         "success")
     return redirect(url_for('homepage'))
-
 
 
 @app.route("/gconnect", methods=["POST"])
@@ -791,7 +847,6 @@ def fbconnect():
     access_token = r["access_token"]
     user_id = request.args.get("user_id")
 
-
     # Get app access token to verify user access token
     app_access = get_fb_app_access_token()
     if not app_access:
@@ -825,12 +880,12 @@ def fbconnect():
     if r["user_id"] != user_id:
         print("access token user id not match")
 
-
     user_info_url = "https://graph.facebook.com/me"
     params = {
         "fields": "email,name,picture",
         "access_token": access_token,
     }
+    
     response = requests.get(user_info_url, params=params)
     if response.status_code != 200:
         pass
@@ -899,7 +954,6 @@ def get_fb_app_access_token():
         return
 
     return result["access_token"]
-
 
 
 if __name__ == '__main__':

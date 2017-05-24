@@ -51,6 +51,10 @@ body {
     max-width: 100px;
 }
 
+.abcRioButton {
+    margin: 0 auto;
+}
+
 .nav-link,
 .dropdown-toggle,
 .dropdown-toggle:focus,
@@ -85,6 +89,10 @@ body {
     margin: 0 3px 20px 3px;
 }
 
+.user-lists {
+    overflow-y: auto;
+     max-height: 100px;
+}
 .item{
 
 }

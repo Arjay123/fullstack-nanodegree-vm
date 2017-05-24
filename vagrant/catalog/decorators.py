@@ -29,8 +29,7 @@ def user_logged_in(f):
         user = session.query(User).filter_by(id=login_session["id"]).first()
         if not user:
             print "error, user not found"
-            abort(404)
-            
+            abort(401)
 
         kwargs["user"] = user
         return f(**kwargs)
@@ -81,7 +80,7 @@ def user_owns_list(f):
 
             if item_list.user.id != user.id:
                 print "You don't own this list"
-                abort(404)
+                abort(403)
 
         return f(**kwargs)
     return func
@@ -98,7 +97,7 @@ def user_owns_item(f):
 
         if item.user.id != user.id:
             print "You don't own this item"
-            abort(404)
+            abort(403)
 
         return f(**kwargs)
     return func
