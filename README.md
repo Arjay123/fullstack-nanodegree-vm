@@ -24,7 +24,7 @@ and then use the command:
 to initialize the database with sample data.
 Additionally you can use the create_db() function in database_setup.py.
 
-In order to use Google and Facebook's OAuth system's you will need to register your own application on their developer pages and create two .json files with the client secrets.
+In order to use Google and Facebook's OAuth system's you will need to register your own application on their developer pages and create two .json files with the client secrets. Place these json files in the same directory as the project.py script.
 
 Google - client_secrets.json https://developers.google.com/identity/protocols/OAuth2WebServer#enable-apis
 {
