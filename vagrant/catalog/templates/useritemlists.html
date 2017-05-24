@@ -5,77 +5,65 @@
 {% block content %}
 
 <div class="row">
-    <div class="col-xs-12">
-        <div class="dropdown pull-right">
-          <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-            Filter by: Name
-            <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-            <li><a href="{{url_for('catalogPage', category=category, order='name')}}">Name (A-Z)</a></li>
-            <li><a href="{{url_for('catalogPage', category=category, order='name_desc')}}">Name (Z-A)</a></li>
-            <li><a href="{{url_for('catalogPage', category=category, order='views_desc')}}">Most Viewed</a></li>
-            <li><a href="{{url_for('catalogPage', category=category, order='views')}}">Least Viewed</a></li>
-          </ul>
-        </div>
-    </div>
-</div>
-
-<div class="row">
     <div class="col-xs-2">
         <h4>Your lists</h4>
-        <ul>
+        <ul class="list-group">
         {% for list in lists %}
-          <li><a href="{{url_for('userCreatedLists', list_id=list.id)}}">{{list.name}}</a></li>
+        <a class="list-group-item" href="{{url_for('userCreatedLists', list_id=list.id)}}">{{list.name}}</a>
         {% endfor %}
         </ul>
+
         <a data-toggle="modal" data-target="#myModal">Create new list</a>
     </div>
 
     <div class="col-xs-10">
-        {% if sel_list and sel_list.items|length > 0 %}
-          <div class="row list-hdr row-eq-height">
-            <div class="col-xs-6">
-              <h3>Items in {{sel_list.name}}</h3>
-              <a data-toggle="modal" href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
+        {% if sel_list %}
+          {% if sel_list.items|length > 0 %}
+            <div class="row list-hdr row-eq-height">
+              <div class="col-xs-6">
+                <h3>Items in {{sel_list.name}}</h3>
+                <a  href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
+              </div>
+              
             </div>
-            
-          </div>
-          {% for item in sel_list.items %}
-          <div class="row item row-eq-height">
-            <div class="col-xs-4 item-image-container">
-                <a href="#"><img class="img-responsive center-block" src="http://placehold.it/200x200"></a>
+            {% for item in sel_list.items %}
+            <div class="row item row-eq-height">
+              <div class="col-xs-3 item-image-container">
+                  <a href="#"><img class="img-responsive" src="{{url_for('image_file', filename=item.image)}}"></a>
+              </div>
+              <div class="col-xs-6">
+                  <h4>{{item.name}}</h4>
+                  <h6>{{item.user.name}}</h6>
+                  <p>{{item.description}}</p>
+                  <h6>{{item.views}} views</h6>
+              </div>
+              <div class="col-xs-3">
+                <form method="POST" action="{{url_for('moveItemBetweenLists', item_id=item.id)}}">
+                    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+                    <input name="item_id" type=hidden value="{{item.id}}">
+                    <input name="from_list_id" type=hidden value="{{sel_list.id}}">
+                    <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                      {%for list in lists %}
+                        <li><button type="submit" name="move" value="{{list.id}}">{{list.name}}</button></li>
+                      {% endfor %}
+                    </ul>
+                </form>
+                <form method="POST" action="{{url_for('removeItemFromList', item_id=item.id, list_id=sel_list.id)}}">
+                    <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
+                    <input name="list_id" type=hidden value="{{sel_list.id}}">
+                    <input type="submit" type="button" value="Delete" class="btn btn-danger btn-xs">
+                </form>
+              </div>
             </div>
-            <div class="col-xs-5">
-                <h4>{{item.name}}</h4>
-                <h6>{{item.user.name}}</h6>
-                <p>{{item.description}}</p>
-                <h6>{{item.views}} views</h6>
-            </div>
-            <div class="col-xs-3">
-              <form method="POST" action="{{url_for('moveItemBetweenLists', item_id=item.id)}}">
-                  <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-                  <input name="item_id" type=hidden value="{{item.id}}">
-                  <input name="from_list_id" type=hidden value="{{sel_list.id}}">
-                  <a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#">Move <span class="caret"></span></a>
-                  <ul class="dropdown-menu">
-                    {%for list in lists %}
-                      <li><button type="submit" name="move" value="{{list.id}}">{{list.name}}</button></li>
-                    {% endfor %}
-                  </ul>
-              </form>
-              <form method="POST" action="{{url_for('removeItemFromList', item_id=item.id, list_id=sel_list.id)}}">
-                  <input name="_csrf_token" type=hidden value="{{csrf_token()}}">
-                  <input name="list_id" type=hidden value="{{sel_list.id}}">
-                  <input type="submit" type="button" value="Delete" class="btn btn-danger btn-xs">
-              </form>
-            </div>
-          </div>
-          <hr>
-          {% endfor %}
+            <hr>
+            {% endfor %}
+          {% else %}
+            <h4>{{sel_list.name}} is empty! Any items added to this list will show up here.</h4>
+            <a href="{{url_for('editList', list_id=sel_list.id)}}">Edit/Delete list</a>
+          {% endif %}
         {% else %}
-        <h4>This list is empty! Any items added to this list will show up here.</h4>
-        <a data-toggle="modal" data-target="#editListModal">Edit/Delete list</a>
+          <h4>You have no lists! Create one now to save items</h4>
         {% endif %}
             
     </div>

@@ -28,16 +28,17 @@
         </div>
     </div>
     <div class="form-group">
-        <label for="item-image-input" class="col-xs-2">Image Upload</label>
+        <label for="item-image-input" class="col-xs-2">Image Upload (png, jpg, jpeg)</label>
         <div class="col-xs-4">
             <input type="file" name="image">
+            <span class="form-error">{{errors['image']}}</span>
         </div>
     </div>
     {% if image %}
     <div class="form-group">
         <label for="item-image-preview" class="col-xs-2">Current Image</label>
-        <div class="col-xs-10">
-            <img src="{{url_for('image_file', filename=image)}}">
+        <div class="col-xs-3">
+            <img class="img-responsive" src="{{url_for('image_file', filename=image)}}">
         </div>
     </div>
     {% endif %}

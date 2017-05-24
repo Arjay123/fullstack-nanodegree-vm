@@ -56,23 +56,30 @@ FB.AppEvents.logPageView();
                 <h3>Login</h3>
             </div>
             <div class="login-auths text-center">
-
-                <div id="signInButton">
-                  <span class="g-signin2"
-                    data-scope="openid email"
-                    data-redirecturi="postmessage"
-                    data-accesstype="offline"
-                    data-cookiepolicy="single_host_origin"
-                    data-onsuccess="signInCallback"
-                    data-onfailure="onSignInFailure"
-                    data-approvalprompt="force">
-                  </span>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div id="signInButton">
+                          <span class="g-signin2"
+                            data-scope="openid email"
+                            data-redirecturi="postmessage"
+                            data-accesstype="offline"
+                            data-cookiepolicy="single_host_origin"
+                            data-onsuccess="signInCallback"
+                            data-onfailure="onSignInFailure"
+                            data-approvalprompt="force">
+                          </span>
+                        </div>
+                    </div>
                 </div>
-
-                <fb:login-button 
-                  scope="public_profile,email"
-                  onlogin="checkLoginState()">
-                </fb:login-button>
+                <br>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <fb:login-button 
+                          scope="public_profile,email"
+                          onlogin="checkLoginState()">
+                        </fb:login-button>
+                    </div>
+                </div>
 
             </div>
           </div>

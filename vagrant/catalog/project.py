@@ -1,6 +1,7 @@
 import random
 import hashlib
 import os
+import string
 
 from flask import Flask, render_template, url_for, request, redirect, flash, jsonify
 from flask import session as login_session
@@ -48,7 +49,7 @@ LOCAL_ID = "id"
 
 FACEBOOK = "facebook"
 GOOGLE = "google"
-
+DEFAULT_ITEM_IMAGE = "noimage.png"
 
 
 @app.errorhandler(404)
@@ -115,6 +116,16 @@ def generate_csrf_token():
 app.jinja_env.globals["csrf_token"] = generate_csrf_token
 
 
+def generate_filename(ext):
+    current_images = [fn for fn in os.listdir(app.config["UPLOAD_PATH"])]
+    newfilename = ''.join(random.choice(string.ascii_letters 
+        + string.digits) for _ in range(16)) + "." + ext
+    while newfilename in current_images:
+        newfilename = ''.join(random.choice(string.ascii_letters 
+        + string.digits) for _ in range(16)) + "." + ext
+    return newfilename
+
+
 def get_categories():
     """
     Retrieves all available item catagories
@@ -126,7 +137,7 @@ def get_categories():
     return [cat[0] for cat in categories]
 
 
-@app.route("/static/images/<filename>")
+@app.route("/images/<filename>")
 def image_file(filename):
     """
     Serves image files
@@ -390,7 +401,7 @@ def allowedFile(filename):
         return filename.split(".")[-1] in EXTENSIONS
 
 
-@app.route("/create", methods=['GET', 'POST'])
+@app.route("/item/create", methods=['GET', 'POST'])
 @user_logged_in
 def createItemPage(user):
     """ 
@@ -404,10 +415,12 @@ def createItemPage(user):
         category = request.form['category']
         description = request.form['description']
         image = request.files.get("image")
+        
 
         params = {"name": name,
                   "category": category,
-                  "description": description}
+                  "description": description,
+                  "image": image}
 
         form_valid = True
         if not name:
@@ -422,6 +435,16 @@ def createItemPage(user):
             form_valid = False
             errors['description'] = "Item description is required"
 
+        #check file has valid extension
+        filename = None
+        if image:
+            filename = secure_filename(image.filename)
+            if filename and not allowedFile(filename):
+                form_valid = False
+                errors['image'] = "Item image is not valid"
+                filename = None
+
+
         if form_valid:
 
             new_item = Item(name=name,
@@ -430,13 +453,15 @@ def createItemPage(user):
                             user=user,
                             views=0)
 
-            #attempt save image
-            if image:
-                filename = secure_filename(image.filename)
-                if filename and allowedFile(filename):
-                    fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
-                    image.save(fullpath)
-                    new_item.image = filename
+            # if image was uploaded, generate random string for new filename
+            # to avoid collisions in images folder
+            if filename:
+                ext = filename.split(".")[-1]
+                filename = generate_filename(ext)
+                
+                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                image.save(fullpath)
+                new_item.image = filename
 
             session.add(new_item)
             session.commit()
@@ -470,38 +495,54 @@ def editItemPage(item, **kwargs):
         category = request.form['category']
         description = request.form['description']
         image = request.files.get("image")
-
+        
+        params = {"name": name,
+                  "category": category,
+                  "description": description,
+                  "image": image}
 
         form_valid = True
         if not name:
             form_valid = False
-            errors['name'] = "Item name cannot be empty"
+            errors['name'] = "Item name is required"
 
         if not category:
             form_valid = False
-            errors['category'] = "Item category cannot be empty"
+            errors['category'] = "Item category is required"
 
         if not description:
             form_valid = False
-            errors['description'] = "Item description cannot be empty"
+            errors['description'] = "Item description is required"
+
+        filename = None
+        if image:
+            filename = secure_filename(image.filename)
+            if filename and not allowedFile(filename):
+                form_valid = False
+                errors['image'] = "Item image is not valid"
+                filename = None
 
         if form_valid:
             item.name = name
             item.category = category
             item.description = description
 
-            if image:
-                filename = secure_filename(image.filename)
-                if filename and allowedFile(filename):
-                    oldfile = item.image
-                    if oldfile:
-                        os.remove(os.path.join(app.config["UPLOAD_PATH"],
-                                  oldfile))
+            # if image was uploaded, generate random string for new filename
+            # to avoid collisions in images folder
+            if filename:
+                ext = filename.split(".")[-1]
+                filename = generate_filename(ext)
+                
+                # if item had previous image, delete if it is not the default
+                # item image
+                oldfile = item.image
+                if oldfile and oldfile != DEFAULT_ITEM_IMAGE:
+                    os.remove(os.path.join(app.config["UPLOAD_PATH"],
+                              oldfile))
 
-                    fullpath = os.path.join(app.config["UPLOAD_PATH"],
-                                            filename)
-                    image.save(fullpath)
-                    item.image = filename
+                fullpath = os.path.join(app.config["UPLOAD_PATH"], filename)
+                image.save(fullpath)
+                item.image = filename
 
             session.add(item)
             session.commit()
@@ -527,7 +568,7 @@ def deleteItem(item, **kwargs):
 
     item - item to be deleted
     """
-    if item.image:
+    if item.image and item.image != DEFAULT_ITEM_IMAGE:
         os.remove(os.path.join(app.config["UPLOAD_PATH"], item.image))
 
     session.delete(item)
@@ -572,7 +613,7 @@ def userPage(user):
     return render_template("user.html", **params)
 
 
-@app.route("/selfPage")
+@app.route("/self")
 @user_logged_in
 def selfPage(user):
     """
@@ -606,7 +647,7 @@ def userCreatedLists(user, list_id=None, item_list=None):
                            sel_list=item_list)
 
 
-@app.route("/lists/create", methods=["POST"])
+@app.route("/list/create", methods=["POST"])
 @user_logged_in 
 def createList(user):
     """
@@ -628,16 +669,15 @@ def createList(user):
     return redirect(url_for('userCreatedLists'))
 
 
-@app.route("/lists/edit/<int:list_id>", methods=["GET", "POST"])
+@app.route("/list/<int:list_id>/edit", methods=["GET", "POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
-def editList(user, item_list, **kwargs):
+def editList(item_list, **kwargs):
     """
     Edits list name
 
     Args:
-        user - user editing the list
         item_list - list to be edited
     """
     errors = {}
@@ -659,20 +699,18 @@ def editList(user, item_list, **kwargs):
         else:
             flash("List changes not saved, see errors below", "danger")
 
-
     return render_template("editlist.html", list=item_list, errors=errors)    
 
 
-@app.route("/lists/delete/<int:list_id>", methods=["POST"])
+@app.route("/list/<int:list_id>/delete", methods=["POST"])
 @user_logged_in
 @list_exists
 @user_owns_list
-def deleteList(user, item_list, **kwargs):
+def deleteList(item_list, **kwargs):
     """
     Deletes a list
 
     Args:
-        user - user deleting the list
         item_list - list to be deleted
     """
     session.delete(item_list)
