@@ -22,7 +22,7 @@ class User(Base):
     email - Email of user, must be unique but can be empty
     image - Link to image of user from third-party auth website (i.e. google)
     """
-    __tablename__ = "user"
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
@@ -42,8 +42,8 @@ Table that holds which items are held in item list
 itemlist_table = Table('association', Base.metadata,
                        Column('id', Integer, primary_key=True),
                        Column("itemlist_id", Integer,
-                              ForeignKey("itemlist.id")),
-                       Column("item_id", Integer, ForeignKey("item.id"))
+                              ForeignKey("itemlist.id", ondelete="CASCADE")),
+                       Column("item_id", Integer, ForeignKey("item.id", ondelete="CASCADE"))
                        )
 
 
@@ -66,7 +66,7 @@ class Item(Base):
     category = Column(String(80), nullable=False)
     description = Column(String, nullable=False)
     views = Column(Integer, default=0)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     user = relationship(User)
     image = Column(String(250), default="noimage.png")
 
@@ -97,7 +97,7 @@ class ItemList(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     user = relationship(User)
     items = relationship("Item",
                          secondary=itemlist_table,
@@ -118,7 +118,7 @@ class ItemList(Base):
         return [item.serialize for item in self.items]
 
 
-def create_db(uri="sqlite:///itemcatalog.db"):
+def create_db(uri="postgresql+psycopg2://username:password@localhost:5432/item-catalog"):
     """
     Creates the database at the provided uri
     """

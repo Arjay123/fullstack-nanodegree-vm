@@ -9,15 +9,19 @@ from database_setup import User
 
 
 create_db()
-engine = create_engine("sqlite:///itemcatalog.db")
+engine = create_engine("postgresql+psycopg2://username:password@localhost:5432/item-catalog")
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 session.rollback()
+session.execute("DELETE FROM association")
+session.query(ItemList).delete()
 session.query(Item).delete()
 session.query(User).delete()
-session.query(ItemList).delete()
+session.execute("ALTER SEQUENCE item_id_seq RESTART WITH 1")
+session.execute("ALTER SEQUENCE users_id_seq RESTART WITH 1")
+session.execute("ALTER SEQUENCE itemlist_id_seq RESTART WITH 1")
 session.commit()
 
 # add users

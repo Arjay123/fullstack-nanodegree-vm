@@ -8,7 +8,7 @@ from database_setup import Base
 Create db session in one place so multiple python scripts can access
 the same db session
 """
-db_uri = "sqlite:///itemcatalog.db"
+db_uri = "postgresql+psycopg2://username:password@localhost:5432/item-catalog"
 engine = create_engine(db_uri)
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)

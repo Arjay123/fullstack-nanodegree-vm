@@ -12,7 +12,7 @@ from database_setup import ItemList
 from database_setup import User
 
 
-db_uri = "sqlite:///itemcatalog_test.db"
+db_uri = "postgresql+psycopg2://username:password@localhost:5432/item-catalog"
 create_db(db_uri)
 engine = create_engine(db_uri)
 Base.metadata.bind = engine
@@ -316,9 +316,14 @@ class TestCatalogDB(unittest.TestCase):
 def db_init():
     # delete existing entries in db
     session.rollback()
+    session.execute("DELETE FROM association")
+    session.query(ItemList).delete()
     session.query(Item).delete()
     session.query(User).delete()
-    session.query(ItemList).delete()
+    session.execute("ALTER SEQUENCE item_id_seq RESTART WITH 1")
+    session.execute("ALTER SEQUENCE users_id_seq RESTART WITH 1")
+    session.execute("ALTER SEQUENCE itemlist_id_seq RESTART WITH 1")
+
     session.commit()
 
     # add users
