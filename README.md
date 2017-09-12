@@ -1,6 +1,6 @@
 ## item-catalog
 
-A website that allows users to perform CRUD operations on a SQLite database using Python with Flask and SQLAlchemy.
+A website that allows users to perform CRUD operations on a SQLite or PostgreSQL database using Python with Flask and SQLAlchemy.
 
 ## Install
 
@@ -59,3 +59,8 @@ Once all above requirements are met, you may test the database by running the da
 
 To start the application, run the project.py script
 >python project.py
+
+
+## SQLite vs PostgreSQL
+
+SQLite is supported in the master branch. For PostgreSQL support use the psql branch.
